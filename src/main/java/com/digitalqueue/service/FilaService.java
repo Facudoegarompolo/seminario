@@ -1,6 +1,8 @@
 package com.digitalqueue.service;
 
 import com.digitalqueue.dto.FilaEstadoResponse;
+import com.digitalqueue.exception.OperacionInvalidaException;
+import com.digitalqueue.exception.RecursoNoEncontradoException;
 import com.digitalqueue.model.Fila;
 import com.digitalqueue.model.PuntoAcceso;
 import com.digitalqueue.model.enums.EstadoFila;
@@ -27,7 +29,7 @@ public class FilaService {
     public FilaEstadoResponse obtenerEstadoFila(String codigoPublico) {
         PuntoAcceso puntoAcceso = puntoAccesoRepository
                 .findByCodigoPublicoAndActivoTrue(codigoPublico)
-                .orElseThrow(() -> new RuntimeException("Punto de acceso no encontrado o inactivo"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Punto de acceso no encontrado o inactivo"));
 
         Fila fila = puntoAcceso.getFila();
 
@@ -52,7 +54,7 @@ public class FilaService {
 
     public void validarFilaAbierta(Fila fila) {
         if (fila.getEstado() != EstadoFila.ABIERTA) {
-            throw new RuntimeException("La fila no está abierta");
+            throw new OperacionInvalidaException("La fila no está abierta");
         }
     }
 }
