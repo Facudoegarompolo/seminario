@@ -11,8 +11,8 @@
 	<groupId>com.digitalqueue</groupId>
 	<artifactId>digitalqueue</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>digitalqueue</name>
+	<description>Backend para Digital Queue</description>
 	<url/>
 	<licenses>
 		<license/>
