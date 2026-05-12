@@ -1,0 +1,50 @@
+package com.digitalqueue.controller;
+
+import com.digitalqueue.dto.TurnoAdminResponse;
+import com.digitalqueue.dto.TurnoEstadoResponse;
+import com.digitalqueue.service.TurnoService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/admin")
+@RequiredArgsConstructor
+public class AdminFilaController {
+
+    private final TurnoService turnoService;
+
+    @GetMapping("/filas/{filaId}/turnos")
+    public ResponseEntity<List<TurnoAdminResponse>> obtenerTurnosDeFila(
+            @PathVariable Long filaId
+    ) {
+        List<TurnoAdminResponse> response = turnoService.obtenerTurnosDeFila(filaId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/filas/{filaId}/llamar-siguiente")
+    public ResponseEntity<TurnoEstadoResponse> llamarSiguiente(
+            @PathVariable Long filaId
+    ) {
+        TurnoEstadoResponse response = turnoService.llamarSiguiente(filaId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/turnos/{turnoId}/finalizar")
+    public ResponseEntity<TurnoEstadoResponse> finalizarTurno(
+            @PathVariable Long turnoId
+    ) {
+        TurnoEstadoResponse response = turnoService.finalizarTurno(turnoId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/turnos/{turnoId}/no-presentado")
+    public ResponseEntity<TurnoEstadoResponse> marcarNoPresentado(
+            @PathVariable Long turnoId
+    ) {
+        TurnoEstadoResponse response = turnoService.marcarNoPresentado(turnoId);
+        return ResponseEntity.ok(response);
+    }
+}
