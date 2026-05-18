@@ -2,6 +2,7 @@ package com.digitalqueue.model;
 
 import com.digitalqueue.model.enums.EstadoTurno;
 import com.digitalqueue.model.enums.QueueStatus;
+import com.digitalqueue.model.enums.TipoCliente;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -51,6 +52,13 @@ public class Turno {
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
 
+    @Column(name = "nombre_cliente", length = 50)
+    private String nombreCliente;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_cliente", length = 20)
+    private TipoCliente tipoCliente;
+
     @Column(name = "cantidad_integrantes")
     private Integer cantidadIntegrantes;
 
@@ -93,6 +101,12 @@ public class Turno {
         }
         if (cantidadIntegrantes == null) {
             cantidadIntegrantes = 1;
+        }
+        if (tipoCliente == null) {
+            tipoCliente = TipoCliente.ANONIMO;
+        }
+        if (nombreCliente == null || nombreCliente.isBlank()) {
+            nombreCliente = "Cliente anónimo";
         }
         if (diaSemana == null) {
             diaSemana = createdAt.getDayOfWeek();

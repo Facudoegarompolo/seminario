@@ -14,6 +14,7 @@ import com.digitalqueue.model.Turno;
 import com.digitalqueue.model.enums.EstadoFila;
 import com.digitalqueue.model.enums.EstadoTurno;
 import com.digitalqueue.model.enums.QueueStatus;
+import com.digitalqueue.model.enums.TipoCliente;
 import com.digitalqueue.repository.LocalRepository;
 import com.digitalqueue.repository.PuntoAccesoRepository;
 import com.digitalqueue.repository.TurnoRepository;
@@ -41,6 +42,7 @@ public class TurnoService {
             EstadoTurno.ESPERANDO,
             EstadoTurno.PROXIMO
     );
+    private static final String NOMBRE_CLIENTE_ANONIMO = "Cliente anónimo";
 
     @Transactional
     public CrearTurnoResponse crearTurnoAnonimo(String codigoPublico, CrearTurnoRequest request) {
@@ -55,6 +57,7 @@ public class TurnoService {
         }
 
         int cantidadIntegrantes = obtenerCantidadIntegrantes(request);
+        String nombreCliente = obtenerNombreCliente(request);
         Long personasAdelante = turnoRepository.countByFilaIdAndEstadoIn(fila.getId(), ESTADOS_EN_ESPERA);
         EstimacionEspera estimacion = estimacionEsperaService.calcularEstimacion(fila, personasAdelante, cantidadIntegrantes);
 
@@ -73,6 +76,8 @@ public class TurnoService {
                 .calledAt(estadoInicial == EstadoTurno.LLAMADO ? ahora : null)
                 .expiresAt(ahora.plusHours(2))
                 .cliente(null)
+                .nombreCliente(nombreCliente)
+                .tipoCliente(TipoCliente.ANONIMO)
                 .cantidadIntegrantes(cantidadIntegrantes)
                 .posicionInicial(Math.toIntExact(personasAdelante + 1))
                 .personasAdelanteAlAnotarse(personasAdelante)
@@ -99,6 +104,8 @@ public class TurnoService {
                 turnoGuardado.getNumeroTurno(),
                 turnoGuardado.getTokenPublico(),
                 turnoGuardado.getEstado(),
+                turnoGuardado.getNombreCliente(),
+                turnoGuardado.getTipoCliente(),
                 estimacion.getQueueStatus(),
                 personasAdelante,
                 estimacion.getTiempoEstimadoMinutos(),
@@ -224,6 +231,8 @@ public class TurnoService {
                 turno.getFila().getId(),
                 turno.getNumeroTurno(),
                 turno.getEstado(),
+                obtenerNombreCliente(turno),
+                obtenerTipoCliente(turno),
                 estimacion.getQueueStatus(),
                 personasAdelante,
                 estimacion.getTiempoEstimadoMinutos(),
@@ -239,6 +248,8 @@ public class TurnoService {
                 turno.getEstado(),
                 turno.getQueueStatusAlAnotarse(),
                 turno.getCantidadIntegrantes(),
+                obtenerNombreCliente(turno),
+                obtenerTipoCliente(turno),
                 turno.getPersonasAdelanteAlAnotarse(),
                 turno.getTiempoEstimadoInformadoMinutos(),
                 turno.getTiempoRealEsperaMinutos(),
@@ -254,6 +265,24 @@ public class TurnoService {
             return 1;
         }
         return request.getCantidadIntegrantes();
+    }
+
+    private String obtenerNombreCliente(CrearTurnoRequest request) {
+        if (request == null || request.getNombreCliente() == null || request.getNombreCliente().isBlank()) {
+            return NOMBRE_CLIENTE_ANONIMO;
+        }
+        return request.getNombreCliente().trim();
+    }
+
+    private String obtenerNombreCliente(Turno turno) {
+        if (turno.getNombreCliente() == null || turno.getNombreCliente().isBlank()) {
+            return NOMBRE_CLIENTE_ANONIMO;
+        }
+        return turno.getNombreCliente();
+    }
+
+    private TipoCliente obtenerTipoCliente(Turno turno) {
+        return turno.getTipoCliente() == null ? TipoCliente.ANONIMO : turno.getTipoCliente();
     }
 
     private void actualizarMetricasDeEspera(Turno turno, LocalDateTime horaLlamado) {

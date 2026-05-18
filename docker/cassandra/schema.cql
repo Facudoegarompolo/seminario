@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS metricas_inscripcion_por_fila_dia (
     created_at timestamp,
     turno_id bigint,
     cantidad_integrantes int,
+    nombre_cliente text,
+    tipo_cliente text,
     personas_adelante bigint,
     queue_status text,
     tiempo_estimado_informado int,

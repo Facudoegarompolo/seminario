@@ -2,6 +2,7 @@ package com.digitalqueue.dto;
 
 import com.digitalqueue.model.enums.EstadoTurno;
 import com.digitalqueue.model.enums.QueueStatus;
+import com.digitalqueue.model.enums.TipoCliente;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,8 @@ public class TurnoAdminResponse {
     private EstadoTurno estado;
     private QueueStatus queueStatusAlAnotarse;
     private Integer cantidadIntegrantes;
+    private String nombreCliente;
+    private TipoCliente tipoCliente;
     private Long personasAdelanteAlAnotarse;
     private Integer tiempoEstimadoInformadoMinutos;
     private Integer tiempoRealEsperaMinutos;

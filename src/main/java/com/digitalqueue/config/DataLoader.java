@@ -13,9 +13,11 @@ import com.digitalqueue.repository.PuntoAccesoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.core.annotation.Order;
 
 @Component
 @RequiredArgsConstructor
+@Order(1)
 public class DataLoader implements CommandLineRunner {
 
     private final LocalRepository localRepository;

@@ -28,6 +28,8 @@ public class MetricasFilaService {
                 created_at,
                 turno_id,
                 cantidad_integrantes,
+                nombre_cliente,
+                tipo_cliente,
                 personas_adelante,
                 queue_status,
                 tiempo_estimado_informado,
@@ -35,7 +37,7 @@ public class MetricasFilaService {
                 tiempo_estimado_maximo,
                 dia_semana,
                 franja_horaria
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private static final String INSERT_LLAMADO = """
@@ -104,6 +106,8 @@ public class MetricasFilaService {
                 toInstant(createdAt),
                 turno.getId(),
                 valorEntero(turno.getCantidadIntegrantes(), 1),
+                turno.getNombreCliente(),
+                turno.getTipoCliente() == null ? null : turno.getTipoCliente().name(),
                 valorLong(turno.getPersonasAdelanteAlAnotarse(), 0L),
                 turno.getQueueStatusAlAnotarse() == null ? null : turno.getQueueStatusAlAnotarse().name(),
                 turno.getTiempoEstimadoInformadoMinutos(),
