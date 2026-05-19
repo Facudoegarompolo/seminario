@@ -2,6 +2,7 @@ import TarjetaInfo from '../componentes/TarjetaInfo'
 import BotonPrincipal from '../componentes/BotonPrincipal'
 import logoMcDonalds from '../assets/mcdonalds.webp'
 import { useNavigate } from 'react-router-dom'
+import SelectorCantidad from '../componentes/SelectorCantidad'
 
 function Inicio() {
     const navigate = useNavigate()
@@ -32,6 +33,8 @@ function Inicio() {
 
             <section className="seccion-formulario">
 
+                <SelectorCantidad />
+
                 <div className="contenedor-input">
 
                     <input
@@ -51,7 +54,7 @@ function Inicio() {
                     onClick={() => navigate('/estado')}
                 >
                     <BotonPrincipal>
-                        Anotarme a la fila
+                        Anotarme
                     </BotonPrincipal>
                 </div>
 

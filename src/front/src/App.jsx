@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
-import Inicio from './paginas/Inicio'
-import Estado from './paginas/Estado'
+import Inicio from './cliente/paginas/Inicio'
+import Estado from './cliente/paginas/Estado'
 
 function App() {
   return (
