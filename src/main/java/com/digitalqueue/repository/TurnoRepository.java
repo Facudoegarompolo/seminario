@@ -32,4 +32,5 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
             Long filaId,
             Collection<EstadoTurno> estados
     );
+
 }

@@ -1,2 +1,2 @@
-Aca dejo un espacio para hacer aclaraciones del codigo.
-NOMBRE DE LA BASE DE DATOS  digital_queue_db. contraseña en el application.properties
+Ddocker compose up -d
+para levantar la base desde terminar visual

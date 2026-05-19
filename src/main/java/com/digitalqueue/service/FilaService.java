@@ -1,5 +1,6 @@
 package com.digitalqueue.service;
 
+import com.digitalqueue.dto.EstimacionEspera;
 import com.digitalqueue.dto.FilaEstadoResponse;
 import com.digitalqueue.exception.OperacionInvalidaException;
 import com.digitalqueue.exception.RecursoNoEncontradoException;
@@ -20,6 +21,7 @@ public class FilaService {
 
     private final PuntoAccesoRepository puntoAccesoRepository;
     private final TurnoRepository turnoRepository;
+    private final EstimacionEsperaService estimacionEsperaService;
 
     private static final List<EstadoTurno> ESTADOS_EN_ESPERA = List.of(
             EstadoTurno.ESPERANDO,
@@ -38,17 +40,18 @@ public class FilaService {
                 ESTADOS_EN_ESPERA
         );
 
-        Integer tiempoEstimado = Math.toIntExact(
-                personasEsperando * fila.getTiempoPromedioAtencionMinutos()
-        );
+        EstimacionEspera estimacion = estimacionEsperaService.calcularEstimacion(fila, personasEsperando, 1);
 
         return new FilaEstadoResponse(
                 fila.getId(),
                 fila.getLocal().getNombre(),
                 fila.getNombre(),
                 fila.getEstado(),
+                estimacion.getQueueStatus(),
                 personasEsperando,
-                tiempoEstimado
+                estimacion.getTiempoEstimadoMinutos(),
+                estimacion.getTiempoEstimadoMinimoMinutos(),
+                estimacion.getTiempoEstimadoMaximoMinutos()
         );
     }
 

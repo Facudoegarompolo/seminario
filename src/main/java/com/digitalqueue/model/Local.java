@@ -24,4 +24,10 @@ public class Local {
 
     @Column(nullable = false)
     private Boolean activo;
+
+    @Column(name = "capacidad_maxima")
+    private Integer capacidadMaxima;
+
+    @Column(name = "personas_actuales")
+    private Integer personasActuales;
 }
