@@ -1,0 +1,28 @@
+﻿.admin-shell {
+  min-height: 100vh;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+}
+
+.admin-content {
+  width: min(100%, 980px);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 0;
+  background: transparent;
+}
+
+body,
+html {
+  background: #f8fafc;
+}
+
+@media (max-width: 640px) {
+  .admin-shell {
+    padding: 16px;
+  }
+}
