@@ -51,8 +51,7 @@ function Inicio() {
                 </p>
 
                 <div
-                    onClick={() => navigate('/estado')}
-                >
+                    onClick={() => navigate('/estado')}                   >
                     <BotonPrincipal>
                         Anotarme
                     </BotonPrincipal>

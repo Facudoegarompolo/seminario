@@ -1,8 +1,24 @@
+import { useEffect, useState } from 'react'
+
 import logoMcDonalds from '../assets/mcdonalds.webp'
-import BarraProgreso from '../componentes/BarraProgreso'
-import TarjetaEstado from '../componentes/TarjetaEstado'
+import BloqueConfirmacion from '../componentes/BloqueConfirmacion'
+import BloqueSeguimiento from '../componentes/BloqueSeguimiento'
+import AvisoTurno from '../componentes/AvisoTurno'
 
 function Estado() {
+  const [fase, setFase] = useState('aviso2')
+
+  useEffect(() => {
+    if (fase !== 'confirmacion') {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      setFase('seguimiento')
+    }, 2500)
+
+    return () => clearTimeout(timer)
+  }, [fase])
   return (
     <main className="pantalla">
 
@@ -14,41 +30,25 @@ function Estado() {
         />
       </section>
 
-      <BarraProgreso porcentaje={45} />
-
-      <section className="grilla-estado">
-        <TarjetaEstado
-          titulo="Hora En Que Debe Presentarse"
-          valor="9:23 PM"
-        />
-
-        <TarjetaEstado
-          titulo="Tiempo De Espera"
-          valor="4 minutos"
-        />
-
-        <TarjetaEstado
-          titulo="Mi Número"
-          valor="23"
-        />
-
-        <TarjetaEstado
-          titulo="Puesto En Fila"
-          valor="5"
-        />
-      </section>
-
-      <section className="notificacion">
-        <div>
-          <h3>Notificación de turno</h3>
-          <p>Active si quiere que le avisemos su turno</p>
-        </div>
-
-        <label className="switch">
-          <input type="checkbox" />
-          <span></span>
-        </label>
-      </section>
+      {
+        fase === 'confirmacion' ? (
+          <BloqueConfirmacion />
+        ) : fase === 'seguimiento' ? (
+          <BloqueSeguimiento />
+        ) : fase === 'aviso1' ? (
+          <AvisoTurno tipo="aviso1" />
+        ) : fase === 'aviso2' ? (
+          <AvisoTurno tipo="aviso2" />
+        ) : fase === 'turno' ? (
+          <AvisoTurno tipo="turno" />
+        ) : fase === 'tardanza' ? (
+          <AvisoTurno tipo="tardanza" />
+        ) : fase === 'perdido' ? (
+          <AvisoTurno tipo="perdido" />
+        ) : fase === 'finalizado' ? (
+          <AvisoTurno tipo="finalizado" />
+        ) : null
+      }
 
       <footer className="logo-dq">
         DQ

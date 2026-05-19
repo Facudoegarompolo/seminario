@@ -47,7 +47,15 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 28px;
+    justify-content: center;
+
+    margin-top: 28px;
+    margin-bottom: 32px;
+}
+
+.marca img {
+    display: block;
+    margin: 0 auto;
 }
 
 .logo-mcdonalds {
@@ -456,4 +464,189 @@ body,
     margin-top: 8px;
     font-size: 10px;
     color: #777;
+}
+
+.confirmacion {
+    margin-top: 24px;
+    margin-bottom: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.circulo-check {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    background-color: #dff7e7;
+    color: #159447;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 54px;
+    font-weight: 700;
+    margin-bottom: 28px;
+    animation: checkEntrada 0.45s ease;
+}
+
+.confirmacion h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #202020;
+    margin-bottom: 12px;
+}
+
+.confirmacion p {
+    font-size: 13px;
+    color: #555;
+}
+
+.grilla-confirmacion {
+    margin-top: 8px;
+}
+
+.mensaje-exito {
+    margin-top: 32px;
+    background-color: #eaf8ee;
+    color: #3f7f55;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+}
+
+.mensaje-exito span {
+    font-size: 22px;
+}
+
+@keyframes checkEntrada {
+    from {
+        opacity: 0;
+        transform: scale(0.75);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.aviso.perdido {
+    background-color: #ff4d4d;
+    color: white;
+}
+
+.aviso.finalizado {
+    background-color: #22c55e;
+    color: white;
+}
+
+.icono-aviso {
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 24px auto 18px;
+}
+
+.icono-aviso.aviso1 {
+    background-color: #fff7df;
+    color: #eab308;
+}
+
+.icono-aviso.aviso2 {
+    background-color: #fff1df;
+    color: #f97316;
+}
+
+.icono-aviso.turno {
+    background-color: transparent;
+    color: #111827;
+}
+
+.icono-aviso.tardanza {
+    background-color: transparent;
+    color: #ef4444;
+}
+
+.icono-aviso.perdido {
+    background-color: #ef4444;
+    color: white;
+}
+
+.icono-aviso.finalizado {
+    background-color: #22c55e;
+    color: white;
+}
+
+.bloque-aviso {
+    text-align: center;
+    margin-top: 18px;
+    margin-bottom: 28px;
+}
+
+.bloque-aviso h1 {
+    font-size: 21px;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 10px;
+}
+
+.bloque-aviso p {
+    font-size: 13px;
+    color: #444;
+}
+
+.mensaje-aviso {
+    margin-top: 26px;
+
+    padding: 16px 18px;
+
+    border-radius: 10px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.mensaje-aviso span {
+    font-size: 22px;
+}
+
+.mensaje-aviso.aviso1 {
+    background-color: #fff7e8;
+    color: #d97706;
+}
+
+.mensaje-aviso.aviso2 {
+    background-color: #fff1e7;
+    color: #ea580c;
+}
+
+.mensaje-aviso.turno {
+    background-color: #f3ebff;
+    color: #7c3aed;
+}
+
+.mensaje-aviso.tardanza {
+    background-color: #ffe8e8;
+    color: #dc2626;
+}
+
+.mensaje-aviso.finalizado {
+    background-color: #e8f9ee;
+    color: #16a34a;
+}
+
+.mensaje-aviso.perdido {
+    background-color: #f4f4f5;
+    color: #444;
 }
