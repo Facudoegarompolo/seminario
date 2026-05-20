@@ -2,7 +2,10 @@ package com.digitalqueue.repository;
 
 import com.digitalqueue.model.Turno;
 import com.digitalqueue.model.enums.EstadoTurno;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -31,6 +34,25 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
     long countByFilaIdAndEstadoIn(
             Long filaId,
             Collection<EstadoTurno> estados
+    );
+
+    long countByFilaIdAndEstadoAndCompletedAtGreaterThanEqualAndCompletedAtLessThan(
+            Long filaId,
+            EstadoTurno estado,
+            LocalDateTime desde,
+            LocalDateTime hasta
+    );
+
+    @Query("""
+            SELECT t FROM Turno t
+            WHERE t.fila.id = :filaId
+              AND t.estado IN :estados
+            ORDER BY COALESCE(t.completedAt, t.calledAt) DESC
+            """)
+    List<Turno> findUltimosEventos(
+            @Param("filaId") Long filaId,
+            @Param("estados") Collection<EstadoTurno> estados,
+            Pageable pageable
     );
 
 }

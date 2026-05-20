@@ -3,15 +3,19 @@ package com.digitalqueue.config;
 import com.digitalqueue.model.Fila;
 import com.digitalqueue.model.Local;
 import com.digitalqueue.model.PuntoAcceso;
+import com.digitalqueue.model.UsuarioAdmin;
 import com.digitalqueue.model.enums.EstadoFila;
 import com.digitalqueue.model.enums.QueueStatus;
+import com.digitalqueue.model.enums.RolAdmin;
 import com.digitalqueue.model.enums.TipoAcceso;
 import com.digitalqueue.model.enums.TipoDia;
 import com.digitalqueue.repository.FilaRepository;
 import com.digitalqueue.repository.LocalRepository;
 import com.digitalqueue.repository.PuntoAccesoRepository;
+import com.digitalqueue.repository.UsuarioAdminRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.core.annotation.Order;
 
@@ -20,13 +24,19 @@ import org.springframework.core.annotation.Order;
 @Order(1)
 public class DataLoader implements CommandLineRunner {
 
+    private static final String ADMIN_EMAIL = "admin@digitalqueue.com";
+    private static final String ADMIN_PASSWORD = "admin123";
+
     private final LocalRepository localRepository;
     private final FilaRepository filaRepository;
     private final PuntoAccesoRepository puntoAccesoRepository;
+    private final UsuarioAdminRepository usuarioAdminRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
         if (localRepository.count() > 0) {
+            crearAdminSiNoExiste();
             return;
         }
 
@@ -59,5 +69,32 @@ public class DataLoader implements CommandLineRunner {
                 .build();
 
         puntoAccesoRepository.save(puntoAcceso);
+
+        crearAdmin(localGuardado);
+    }
+
+    private void crearAdminSiNoExiste() {
+        if (usuarioAdminRepository.existsByEmail(ADMIN_EMAIL)) {
+            return;
+        }
+
+        Local local = localRepository.findAll().stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No hay locales cargados para crear el admin"));
+
+        crearAdmin(local);
+    }
+
+    private void crearAdmin(Local local) {
+        UsuarioAdmin admin = UsuarioAdmin.builder()
+                .local(local)
+                .nombre("Admin")
+                .email(ADMIN_EMAIL)
+                .password(passwordEncoder.encode(ADMIN_PASSWORD))
+                .rol(RolAdmin.ADMIN_LOCAL)
+                .activo(true)
+                .build();
+
+        usuarioAdminRepository.save(admin);
     }
 }
