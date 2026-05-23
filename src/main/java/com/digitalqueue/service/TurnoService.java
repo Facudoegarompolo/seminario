@@ -15,6 +15,7 @@ import com.digitalqueue.model.enums.EstadoFila;
 import com.digitalqueue.model.enums.EstadoTurno;
 import com.digitalqueue.model.enums.QueueStatus;
 import com.digitalqueue.model.enums.TipoCliente;
+import com.digitalqueue.model.enums.TipoOperacionLocal;
 import com.digitalqueue.repository.LocalRepository;
 import com.digitalqueue.repository.PuntoAccesoRepository;
 import com.digitalqueue.repository.TurnoRepository;
@@ -89,7 +90,7 @@ public class TurnoService {
                 .errorPrediccionMinutos(estadoInicial == EstadoTurno.LLAMADO ? 0 : null)
                 .build();
 
-        if (estadoInicial == EstadoTurno.LLAMADO) {
+        if (estadoInicial == EstadoTurno.LLAMADO && esConsumoEnLocal(fila.getLocal())) {
             sumarPersonasActuales(fila.getLocal(), cantidadIntegrantes);
         }
 
@@ -138,7 +139,9 @@ public class TurnoService {
         turno.setEstado(EstadoTurno.LLAMADO);
         turno.setCalledAt(ahora);
         actualizarMetricasDeEspera(turno, ahora);
-        sumarPersonasActuales(turno.getFila().getLocal(), turno.getCantidadIntegrantes());
+        if (esConsumoEnLocal(turno.getFila().getLocal())) {
+            sumarPersonasActuales(turno.getFila().getLocal(), turno.getCantidadIntegrantes());
+        }
 
         Turno turnoGuardado = turnoRepository.save(turno);
         metricasFilaService.registrarLlamado(turnoGuardado);
@@ -153,7 +156,9 @@ public class TurnoService {
 
         turno.setEstado(EstadoTurno.FINALIZADO);
         turno.setCompletedAt(LocalDateTime.now());
-        restarPersonasActuales(turno.getFila().getLocal(), turno.getCantidadIntegrantes());
+        if (esConsumoEnLocal(turno.getFila().getLocal())) {
+            restarPersonasActuales(turno.getFila().getLocal(), turno.getCantidadIntegrantes());
+        }
 
         Turno turnoGuardado = turnoRepository.save(turno);
 
@@ -301,6 +306,7 @@ public class TurnoService {
         int actuales = local.getPersonasActuales() == null ? 0 : local.getPersonasActuales();
         int integrantes = cantidad == null ? 1 : cantidad;
         local.setPersonasActuales(actuales + integrantes);
+        actualizarMomentoLleno(local, LocalDateTime.now());
         localRepository.save(local);
     }
 
@@ -308,6 +314,38 @@ public class TurnoService {
         int actuales = local.getPersonasActuales() == null ? 0 : local.getPersonasActuales();
         int integrantes = cantidad == null ? 1 : cantidad;
         local.setPersonasActuales(Math.max(0, actuales - integrantes));
+        actualizarMomentoLleno(local, LocalDateTime.now());
         localRepository.save(local);
+    }
+
+    private void actualizarMomentoLleno(Local local, LocalDateTime ahora) {
+        int capacidad = obtenerCapacidadEfectiva(local);
+        if (capacidad <= 0) {
+            return;
+        }
+
+        boolean estaLleno = (local.getPersonasActuales() == null ? 0 : local.getPersonasActuales()) >= capacidad;
+
+        if (estaLleno && local.getLlenoDesde() == null) {
+            local.setLlenoDesde(ahora);
+        } else if (!estaLleno) {
+            local.setLlenoDesde(null);
+        }
+    }
+
+    private int obtenerCapacidadEfectiva(Local local) {
+        int capacidadOperativa = local.getCapacidadOperativaActual() == null ? 0 : local.getCapacidadOperativaActual();
+        if (capacidadOperativa > 0) {
+            return capacidadOperativa;
+        }
+
+        return local.getCapacidadMaxima() == null ? 0 : local.getCapacidadMaxima();
+    }
+
+    private boolean esConsumoEnLocal(Local local) {
+        TipoOperacionLocal tipoOperacion = local.getTipoOperacion() == null
+                ? TipoOperacionLocal.ATENCION_RAPIDA
+                : local.getTipoOperacion();
+        return tipoOperacion == TipoOperacionLocal.CONSUMO_EN_LOCAL;
     }
 }
