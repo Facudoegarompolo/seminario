@@ -39,8 +39,9 @@ public class SecurityConfig {
                         // Más adelante esto cambia a authenticated()
                         .requestMatchers("/api/admin/**").permitAll()
 
-                        // Cualquier otra ruta queda bloqueada
-                        .anyRequest().authenticated()
+                        // TEMPORAL MVP/testing: no exigimos JWT en ningun endpoint.
+                        // La configuracion de seguridad queda lista para reactivar authenticated().
+                        .anyRequest().permitAll()
                 );
 
         return http.build();

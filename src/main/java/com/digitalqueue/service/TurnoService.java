@@ -16,6 +16,7 @@ import com.digitalqueue.model.enums.EstadoTurno;
 import com.digitalqueue.model.enums.QueueStatus;
 import com.digitalqueue.model.enums.TipoCliente;
 import com.digitalqueue.model.enums.TipoOperacionLocal;
+import com.digitalqueue.model.enums.TipoNotificacion;
 import com.digitalqueue.repository.LocalRepository;
 import com.digitalqueue.repository.PuntoAccesoRepository;
 import com.digitalqueue.repository.TurnoRepository;
@@ -38,6 +39,7 @@ public class TurnoService {
     private final LocalRepository localRepository;
     private final EstimacionEsperaService estimacionEsperaService;
     private final MetricasFilaService metricasFilaService;
+    private final PushNotificationService pushNotificationService;
 
     private static final List<EstadoTurno> ESTADOS_EN_ESPERA = List.of(
             EstadoTurno.ESPERANDO,
@@ -145,6 +147,7 @@ public class TurnoService {
 
         Turno turnoGuardado = turnoRepository.save(turno);
         metricasFilaService.registrarLlamado(turnoGuardado);
+        pushNotificationService.registrarNotificacionPendiente(turnoGuardado, TipoNotificacion.TURNO_LLAMADO);
 
         return mapToTurnoEstadoResponse(turnoGuardado);
     }
@@ -161,6 +164,7 @@ public class TurnoService {
         }
 
         Turno turnoGuardado = turnoRepository.save(turno);
+        pushNotificationService.registrarNotificacionPendiente(turnoGuardado, TipoNotificacion.NO_PRESENTADO);
 
         return mapToTurnoEstadoResponse(turnoGuardado);
     }
@@ -183,17 +187,15 @@ public class TurnoService {
         Turno turno = turnoRepository.findByTokenPublico(tokenPublico)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
 
-        if (turno.getEstado() == EstadoTurno.FINALIZADO ||
-                turno.getEstado() == EstadoTurno.CANCELADO ||
-                turno.getEstado() == EstadoTurno.NO_PRESENTADO ||
-                turno.getEstado() == EstadoTurno.EXPIRADO) {
-            throw new OperacionInvalidaException("El turno ya no se puede cancelar");
+        if (turno.getEstado() != EstadoTurno.ESPERANDO && turno.getEstado() != EstadoTurno.PROXIMO) {
+            throw new OperacionInvalidaException("Solo se pueden cancelar turnos que siguen en la fila");
         }
 
         turno.setEstado(EstadoTurno.CANCELADO);
         turno.setCompletedAt(LocalDateTime.now());
 
         Turno turnoGuardado = turnoRepository.save(turno);
+        pushNotificationService.registrarNotificacionPendiente(turnoGuardado, TipoNotificacion.TURNO_CANCELADO);
 
         return mapToTurnoEstadoResponse(turnoGuardado);
     }
