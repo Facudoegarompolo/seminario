@@ -30,7 +30,7 @@ public class Local {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_operacion", nullable = false)
+    @Column(name = "tipo_operacion", nullable = false, columnDefinition = "varchar(255) default 'ATENCION_RAPIDA'")
     private TipoOperacionLocal tipoOperacion = TipoOperacionLocal.ATENCION_RAPIDA;
 
     @Column(name = "capacidad_maxima")
