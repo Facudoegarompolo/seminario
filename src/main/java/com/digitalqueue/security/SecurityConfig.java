@@ -53,12 +53,13 @@ public class SecurityConfig {
                                                 // Admin permitido temporalmente para pruebas MVP
                                                 .requestMatchers("/api/admin/**").permitAll()
 
-                                                // Cualquier otra ruta requiere autenticación
-                                                .anyRequest().authenticated());
+                                                // TEMPORAL MVP/testing: no exigimos JWT en ningun endpoint.
+                                                // La configuracion de seguridad queda lista para reactivar
+                                                // authenticated().
+                                                .anyRequest().permitAll());
 
                 return http.build();
         }
-
         /*
          * Configuración CORS para desarrollo.
          *
