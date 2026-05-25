@@ -1,2 +1,9 @@
-Ddocker compose up -d
-para levantar la base desde terminar visual
+docker compose up -d
+para levantar la base desde terminal visual
+
+Cambios backend
+- Las dependencias spring-boot-starter-webmvc-test y spring-boot-starter-websocket-test ya estaban agregadas: sirven para testear controladores MVC y WebSocket.
+- Se agrego soporte real para Web Push con VAPID usando la dependencia nl.martijndwars:web-push.
+- Nuevo endpoint publico: GET /api/public/push/public-key para que el front obtenga la clave publica VAPID.
+- El backend ahora guarda una notificacion por cada suscripcion activa del turno e intenta enviarla si app.push.vapid.public-key y app.push.vapid.private-key estan configuradas.
+- Si las claves VAPID no estan configuradas, las notificaciones quedan pendientes y no se rompe el flujo actual.

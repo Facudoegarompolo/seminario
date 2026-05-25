@@ -24,6 +24,10 @@ public class NotificacionPush {
     @JoinColumn(name = "turno_id", nullable = false)
     private Turno turno;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "push_subscription_id")
+    private PushSubscription pushSubscription;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoNotificacion tipo;

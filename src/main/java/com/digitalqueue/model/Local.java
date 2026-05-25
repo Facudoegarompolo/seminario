@@ -1,5 +1,4 @@
-package com.digitalqueue.model;
-
+import com.digitalqueue.model.enums.TipoOperacionLocal;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,6 +23,11 @@ public class Local {
 
     @Column(nullable = false)
     private Boolean activo;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_operacion", nullable = false, columnDefinition = "varchar(255) default 'ATENCION_RAPIDA'")
+    private TipoOperacionLocal tipoOperacion = TipoOperacionLocal.ATENCION_RAPIDA;
 
     @Column(name = "capacidad_maxima")
     private Integer capacidadMaxima;

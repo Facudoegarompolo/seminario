@@ -15,7 +15,7 @@ import com.digitalqueue.model.enums.EstadoFila;
 import com.digitalqueue.model.enums.EstadoTurno;
 import com.digitalqueue.model.enums.QueueStatus;
 import com.digitalqueue.model.enums.TipoCliente;
-//import com.digitalqueue.model.enums.TipoOperacionLocal;
+import com.digitalqueue.model.enums.TipoOperacionLocal;
 import com.digitalqueue.model.enums.TipoNotificacion;
 import com.digitalqueue.repository.LocalRepository;
 import com.digitalqueue.repository.PuntoAccesoRepository;
