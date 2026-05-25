@@ -1,6 +1,18 @@
 import TarjetaEstado from './TarjetaEstado'
 
-function BloqueConfirmacion() {
+function BloqueConfirmacion({ turno }) {
+
+    const horaActual = new Date()
+
+    horaActual.setMinutes(
+        horaActual.getMinutes() + (turno?.tiempoEstimadoMinutos || 0)
+    )
+
+    const horaPresentacion = horaActual.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    })
+
     return (
         <>
             <section className="confirmacion">
@@ -14,15 +26,35 @@ function BloqueConfirmacion() {
             </section>
 
             <section className="grilla-estado">
-                <TarjetaEstado titulo="Hora en que debe presentarse" valor="9:23 PM" />
-                <TarjetaEstado titulo="Tiempo de espera estimado" valor="15 min" />
-                <TarjetaEstado titulo="Mi número" valor="23" />
-                <TarjetaEstado titulo="Puesto en fila" valor="5" />
+
+                <TarjetaEstado
+                    titulo="Hora en que debe presentarse"
+                    valor={horaPresentacion}
+                />
+
+                <TarjetaEstado
+                    titulo="Tiempo de espera estimado"
+                    valor={`${turno?.tiempoEstimadoMinutos} min`}
+                />
+
+                <TarjetaEstado
+                    titulo="Mi número"
+                    valor={turno?.numeroTurno}
+                />
+
+                <TarjetaEstado
+                    titulo="Puesto en fila"
+                    valor={turno?.personasAdelante + 1}
+                />
+
             </section>
 
             <section className="mensaje-exito">
                 <span>ⓘ</span>
-                <p>Te avisaremos cuando sea casi tu turno.</p>
+
+                <p>
+                    Te avisaremos cuando sea casi tu turno.
+                </p>
             </section>
         </>
     )

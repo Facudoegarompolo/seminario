@@ -650,3 +650,30 @@ body,
     background-color: #f4f4f5;
     color: #444;
 }
+
+.boton-salir-fila {
+    margin-top: 22px;
+    width: 100%;
+    max-width: 320px;
+    padding: 13px 18px;
+
+    border: 1px solid #d6d6d6;
+    border-radius: 18px;
+
+    background: #ffffff;
+    color: #333333;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.boton-salir-fila:hover {
+    background: #f5f5f5;
+}
+
+.boton-salir-fila:active {
+    transform: scale(0.98);
+}

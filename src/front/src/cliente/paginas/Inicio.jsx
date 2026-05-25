@@ -2,10 +2,72 @@ import TarjetaInfo from '../componentes/TarjetaInfo'
 import BotonPrincipal from '../componentes/BotonPrincipal'
 import logoMcDonalds from '../assets/mcdonalds.webp'
 import { useNavigate } from 'react-router-dom'
+//import { useState } from 'react'
 import SelectorCantidad from '../componentes/SelectorCantidad'
+import { useState, useEffect } from 'react'
 
 function Inicio() {
     const navigate = useNavigate()
+
+    const [nombreCliente, setNombreCliente] = useState('')
+    const [cantidadIntegrantes, setCantidadIntegrantes] = useState(1)
+    const [estadoFila, setEstadoFila] = useState(null)
+    const crearTurno = async () => {
+
+        try {
+
+            const response = await fetch(
+                'http://192.168.0.103:8080/api/public/filas/starbucks-uade/turnos',
+                {
+
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+
+                    body: JSON.stringify({
+                        nombreCliente,
+                        cantidadIntegrantes
+                    })
+                }
+            )
+
+            const data = await response.json()
+
+            console.log(data)
+
+            navigate('/estado', { state: data })//integramos json 
+        } catch (error) {
+
+            console.error(error)
+
+        }
+    }
+    useEffect(() => {
+
+        const obtenerEstadoFila = async () => {
+
+            try {
+
+                const response = await fetch(
+                    'http://192.168.0.103:8080/api/public/filas/starbucks-uade/estado',)
+
+                const data = await response.json()
+
+                console.log(data)
+
+                setEstadoFila(data)
+
+            } catch (error) {
+
+                console.error(error)
+
+            }
+        }
+
+        obtenerEstadoFila()
+
+    }, [])
     return (
 
         <main className="pantalla">
@@ -21,25 +83,29 @@ function Inicio() {
 
                 <TarjetaInfo
                     titulo="Gente En Fila"
-                    valor="4"
+                    valor={estadoFila?.personasEsperando ?? 0}
                 />
 
                 <TarjetaInfo
                     titulo="Tiempo De Espera Estimado"
-                    valor="15 min"
+                    valor={`${estadoFila?.tiempoEstimadoMinutos ?? 0} min`}
                 />
 
             </section>
 
             <section className="seccion-formulario">
 
-                <SelectorCantidad />
+                <SelectorCantidad
+                    cantidad={cantidadIntegrantes}
+                    setCantidad={setCantidadIntegrantes} />
 
                 <div className="contenedor-input">
 
                     <input
                         type="text"
                         placeholder="NOMBRE"
+                        value={nombreCliente}
+                        onChange={(e) => setNombreCliente(e.target.value)}
                     />
 
                     <span>×</span>
@@ -51,7 +117,8 @@ function Inicio() {
                 </p>
 
                 <div
-                    onClick={() => navigate('/estado')}                   >
+
+                    onClick={crearTurno}                  >
                     <BotonPrincipal>
                         Anotarme
                     </BotonPrincipal>

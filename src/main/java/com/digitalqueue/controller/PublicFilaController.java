@@ -9,10 +9,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 @RestController
 @RequestMapping("/api/public/filas")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173")
 public class PublicFilaController {
 
     private final FilaService filaService;
@@ -20,8 +22,7 @@ public class PublicFilaController {
 
     @GetMapping("/{codigoPublico}/estado")
     public ResponseEntity<FilaEstadoResponse> obtenerEstadoFila(
-            @PathVariable String codigoPublico
-    ) {
+            @PathVariable String codigoPublico) {
         FilaEstadoResponse response = filaService.obtenerEstadoFila(codigoPublico);
         return ResponseEntity.ok(response);
     }
@@ -29,8 +30,7 @@ public class PublicFilaController {
     @PostMapping("/{codigoPublico}/turnos")
     public ResponseEntity<CrearTurnoResponse> crearTurnoAnonimo(
             @PathVariable String codigoPublico,
-            @Valid @RequestBody(required = false) CrearTurnoRequest request
-    ) {
+            @Valid @RequestBody(required = false) CrearTurnoRequest request) {
         CrearTurnoResponse response = turnoService.crearTurnoAnonimo(codigoPublico, request);
         return ResponseEntity.ok(response);
     }
