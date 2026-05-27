@@ -35,20 +35,21 @@ class UsuarioAdminServiceTest {
 
     @Test
     void devuelveEmailExistenteCuandoYaHayAdminConEseMail() {
-        CrearAdminRequest request = request(" Admin@Test.com ", "password123");
+        CrearAdminRequest request = request(" Facundo ", " Admin@Test.com ", "password123");
         when(usuarioAdminRepository.existsByEmailIgnoreCase("admin@test.com")).thenReturn(true);
 
         CrearAdminResponse response = service.crearCuentaAdministrador(request);
 
         assertFalse(response.getCreado());
         assertTrue(response.getEmailExistente());
+        assertEquals("Facundo", response.getNombre());
         assertEquals("admin@test.com", response.getEmail());
         verify(usuarioAdminRepository, never()).save(any());
     }
 
     @Test
     void creaAdminCuandoElMailNoExiste() {
-        CrearAdminRequest request = request("nuevo@test.com", "password123");
+        CrearAdminRequest request = request(" Nuevo Admin ", "nuevo@test.com", "password123");
         Local local = Local.builder()
                 .id(10L)
                 .nombre("Local test")
@@ -71,13 +72,15 @@ class UsuarioAdminServiceTest {
         assertFalse(response.getEmailExistente());
         assertEquals(20L, response.getUsuarioId());
         assertEquals(10L, response.getLocalId());
+        assertEquals("Nuevo Admin", response.getNombre());
         assertEquals("nuevo@test.com", response.getEmail());
         assertEquals(RolAdmin.ADMIN_LOCAL, response.getRol());
         verify(passwordEncoder).encode(eq("password123"));
     }
 
-    private CrearAdminRequest request(String email, String password) {
+    private CrearAdminRequest request(String nombre, String email, String password) {
         CrearAdminRequest request = new CrearAdminRequest();
+        request.setNombre(nombre);
         request.setEmail(email);
         request.setPassword(password);
         return request;

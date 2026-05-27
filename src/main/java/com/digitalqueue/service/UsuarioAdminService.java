@@ -25,6 +25,7 @@ public class UsuarioAdminService {
 
     @Transactional
     public CrearAdminResponse crearCuentaAdministrador(CrearAdminRequest request) {
+        String nombre = normalizarNombre(request.getNombre());
         String email = normalizarEmail(request.getEmail());
 
         if (usuarioAdminRepository.existsByEmailIgnoreCase(email)) {
@@ -32,6 +33,7 @@ public class UsuarioAdminService {
                     .creado(false)
                     .emailExistente(true)
                     .mensaje("Ya existe una cuenta administradora con ese email.")
+                    .nombre(nombre)
                     .email(email)
                     .build();
         }
@@ -43,7 +45,7 @@ public class UsuarioAdminService {
 
         UsuarioAdmin usuarioAdmin = UsuarioAdmin.builder()
                 .local(local)
-                .nombre(nombreDesdeEmail(email))
+                .nombre(nombre)
                 .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .rol(RolAdmin.ADMIN_LOCAL)
@@ -58,20 +60,17 @@ public class UsuarioAdminService {
                 .mensaje("Cuenta administradora creada correctamente.")
                 .usuarioId(usuarioGuardado.getId())
                 .localId(local.getId())
+                .nombre(usuarioGuardado.getNombre())
                 .email(usuarioGuardado.getEmail())
                 .rol(usuarioGuardado.getRol())
                 .build();
     }
 
-    private String normalizarEmail(String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
+    private String normalizarNombre(String nombre) {
+        return nombre.trim();
     }
 
-    private String nombreDesdeEmail(String email) {
-        int arroba = email.indexOf('@');
-        if (arroba <= 0) {
-            return email;
-        }
-        return email.substring(0, arroba);
+    private String normalizarEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

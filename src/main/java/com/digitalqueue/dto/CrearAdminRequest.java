@@ -8,6 +8,9 @@ import lombok.Data;
 @Data
 public class CrearAdminRequest {
 
+    @NotBlank
+    private String nombre;
+
     @Email
     @NotBlank
     private String email;

@@ -17,6 +17,7 @@ public class CrearAdminResponse {
     private String mensaje;
     private Long usuarioId;
     private Long localId;
+    private String nombre;
     private String email;
     private RolAdmin rol;
 }
