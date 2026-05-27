@@ -25,6 +25,9 @@ public class Local {
     @Column(nullable = false)
     private String direccion;
 
+    @Column(name = "link_imagen_logo", columnDefinition = "text")
+    private String linkImagenLogo;
+
     @Column(nullable = false)
     private Boolean activo;
 
