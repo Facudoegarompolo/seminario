@@ -12,5 +12,7 @@ public interface UsuarioAdminRepository extends JpaRepository<UsuarioAdmin, Long
 
     boolean existsByEmail(String email);
 
+    boolean existsByEmailIgnoreCase(String email);
+
     List<UsuarioAdmin> findByLocalId(Long localId);
 }
