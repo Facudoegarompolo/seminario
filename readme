@@ -7,3 +7,4 @@ Cambios backend
 - Nuevo endpoint publico: GET /api/public/push/public-key para que el front obtenga la clave publica VAPID.
 - El backend ahora guarda una notificacion por cada suscripcion activa del turno e intenta enviarla si app.push.vapid.public-key y app.push.vapid.private-key estan configuradas.
 - Si las claves VAPID no estan configuradas, las notificaciones quedan pendientes y no se rompe el flujo actual.
+- Nuevo endpoint admin: PATCH /api/admin/locales/{localId}/logo para agregar, modificar o quitar el link del logo del local.
