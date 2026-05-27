@@ -55,4 +55,16 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
             Pageable pageable
     );
 
+    long countByFilaIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+            Long filaId,
+            LocalDateTime desde,
+            LocalDateTime hasta
+    );
+
+    List<Turno> findByFilaIdAndCalledAtGreaterThanEqualAndCalledAtLessThan(
+            Long filaId,
+            LocalDateTime desde,
+            LocalDateTime hasta
+    );
+
 }
