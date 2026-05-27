@@ -41,18 +41,12 @@ public class UsuarioAdminService {
         String email = normalizarEmail(request.getEmail());
 
         if (usuarioAdminRepository.existsByEmailIgnoreCase(email)) {
-            return CrearAdminResponse.builder()
-                    .creado(false)
-                    .emailExistente(true)
-                    .mensaje("Ya existe una cuenta administradora con ese email.")
-                    .nombre(nombre)
-                    .email(email)
-                    .build();
+            return new CrearAdminResponse(false, "Ya existe una cuenta administradora con ese email.");
         }
 
         Local local = crearLocal(request);
         Fila fila = crearFilaInicial(local);
-        PuntoAcceso puntoAcceso = crearPuntoAccesoPublico(local, fila);
+        crearPuntoAccesoPublico(local, fila);
 
         UsuarioAdmin usuarioAdmin = UsuarioAdmin.builder()
                 .local(local)
@@ -63,24 +57,9 @@ public class UsuarioAdminService {
                 .activo(true)
                 .build();
 
-        UsuarioAdmin usuarioGuardado = usuarioAdminRepository.save(usuarioAdmin);
+        usuarioAdminRepository.save(usuarioAdmin);
 
-        return CrearAdminResponse.builder()
-                .creado(true)
-                .emailExistente(false)
-                .mensaje("Cuenta administradora creada correctamente.")
-                .usuarioId(usuarioGuardado.getId())
-                .localId(local.getId())
-                .filaId(fila.getId())
-                .nombre(usuarioGuardado.getNombre())
-                .email(usuarioGuardado.getEmail())
-                .rol(usuarioGuardado.getRol())
-                .nombreLocal(local.getNombre())
-                .direccionLocal(local.getDireccion())
-                .linkImagenLogoLocal(local.getLinkImagenLogo())
-                .tipoOperacionLocal(local.getTipoOperacion())
-                .codigoPublico(puntoAcceso.getCodigoPublico())
-                .build();
+        return new CrearAdminResponse(true, "Cuenta administradora creada correctamente.");
     }
 
     private Local crearLocal(CrearAdminRequest request) {

@@ -6,7 +6,6 @@ import com.digitalqueue.model.Fila;
 import com.digitalqueue.model.Local;
 import com.digitalqueue.model.PuntoAcceso;
 import com.digitalqueue.model.UsuarioAdmin;
-import com.digitalqueue.model.enums.RolAdmin;
 import com.digitalqueue.repository.FilaRepository;
 import com.digitalqueue.repository.LocalRepository;
 import com.digitalqueue.repository.PuntoAccesoRepository;
@@ -47,9 +46,7 @@ class UsuarioAdminServiceTest {
         CrearAdminResponse response = service.crearCuentaAdministrador(request);
 
         assertFalse(response.getCreado());
-        assertTrue(response.getEmailExistente());
-        assertEquals("Facundo", response.getNombre());
-        assertEquals("admin@test.com", response.getEmail());
+        assertEquals("Ya existe una cuenta administradora con ese email.", response.getMensaje());
         verify(localRepository, never()).save(any());
         verify(filaRepository, never()).save(any());
         verify(puntoAccesoRepository, never()).save(any());
@@ -86,17 +83,7 @@ class UsuarioAdminServiceTest {
         CrearAdminResponse response = service.crearCuentaAdministrador(request);
 
         assertTrue(response.getCreado());
-        assertFalse(response.getEmailExistente());
-        assertEquals(20L, response.getUsuarioId());
-        assertEquals(10L, response.getLocalId());
-        assertEquals(30L, response.getFilaId());
-        assertEquals("Nuevo Admin", response.getNombre());
-        assertEquals("nuevo@test.com", response.getEmail());
-        assertEquals(RolAdmin.ADMIN_LOCAL, response.getRol());
-        assertEquals("Cafe Test", response.getNombreLocal());
-        assertEquals("Direccion Test", response.getDireccionLocal());
-        assertEquals("https://cdn.test/logo.png", response.getLinkImagenLogoLocal());
-        assertEquals("cafe-test-10", response.getCodigoPublico());
+        assertEquals("Cuenta administradora creada correctamente.", response.getMensaje());
         verify(passwordEncoder).encode(eq("password123"));
     }
 
