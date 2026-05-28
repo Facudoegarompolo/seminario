@@ -1,0 +1,174 @@
+﻿import { useEffect, useMemo, useState } from 'react'
+import queueService from '../../shared/services/queueService'
+import FilterTabs from '../componentes/FilterTabs'
+import TurnoCard from '../componentes/TurnoCard'
+import '../estilos/Fila.css'
+
+const TAB_OPTIONS = [
+  { key: 'ALL', label: 'Todos' },
+  { key: 'WAITING', label: 'En espera' },
+  { key: 'CALLED', label: 'Llamados' },
+]
+
+const STATUS_MAP = {
+  ESPERANDO: { label: 'En espera', color: 'green' },
+  PROXIMO: { label: 'En espera', color: 'green' },
+  LLAMADO: { label: 'Llamado', color: 'blue' },
+  ATENDIENDO: { label: 'Atendido', color: 'gray' },
+  FINALIZADO: { label: 'Atendido', color: 'gray' },
+  CANCELADO: { label: 'Cancelado', color: 'red' },
+  NO_PRESENTADO: { label: 'No se presentó', color: 'red' },
+}
+
+function Fila() {
+  const [turnos, setTurnos] = useState([])
+  const [activeTab, setActiveTab] = useState('ALL')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const fetchTurnos = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const data = await queueService.getTurnos()
+      setTurnos(Array.isArray(data) ? data : [])
+    } catch (err) {
+      setError('No se pudo cargar la fila. Intenta nuevamente.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTurnos()
+  }, [])
+
+  const enrichedTurnos = useMemo(() => {
+    return turnos.map((turno, index) => {
+      const statusInfo = STATUS_MAP[turno.estado] || { label: turno.estado, color: 'gray' }
+      const personas = turno.personas ?? 1
+      const tiempoEstimado = turno.tiempoEstimadoMinutos ? `${turno.tiempoEstimadoMinutos} min` : `${(index + 1) * 5} min`
+
+      return {
+        ...turno,
+        estadoLabel: statusInfo.label,
+        statusColor: statusInfo.color,
+        personas,
+        tiempoEstimado,
+      }
+    })
+  }, [turnos])
+
+  const filteredTurnos = useMemo(() => {
+    if (activeTab === 'WAITING') {
+      return enrichedTurnos.filter((turno) => ['ESPERANDO', 'PROXIMO'].includes(turno.estado))
+    }
+    if (activeTab === 'CALLED') {
+      return enrichedTurnos.filter((turno) => ['LLAMADO', 'ATENDIENDO'].includes(turno.estado))
+    }
+
+    return enrichedTurnos
+  }, [activeTab, enrichedTurnos])
+
+  const handleCallNext = async () => {
+    setBusy(true)
+    setError(null)
+
+    try {
+      await queueService.llamarSiguiente()
+      await fetchTurnos()
+    } catch (err) {
+      setError('No se pudo llamar al siguiente cliente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleCall = async () => {
+    setBusy(true)
+    setError(null)
+
+    try {
+      await queueService.llamarSiguiente()
+      await fetchTurnos()
+    } catch (err) {
+      setError('No se pudo llamar al cliente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleFinish = async (turno) => {
+    setBusy(true)
+    setError(null)
+
+    try {
+      await queueService.finalizarTurno(turno.turnoId)
+      await fetchTurnos()
+    } catch (err) {
+      setError('No se pudo marcar el turno como atendido.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleCancel = async (turno) => {
+    setBusy(true)
+    setError(null)
+
+    try {
+      await queueService.marcarNoPresentado(turno.turnoId)
+      await fetchTurnos()
+    } catch (err) {
+      setError('No se pudo cancelar el turno.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleDetail = (turno) => {
+    window.alert(`Detalle de turno #${turno.numeroTurno}`)
+  }
+
+  return (
+    <div className="fila-page">
+      <header className="fila-header">
+        <div>
+          <h2>Fila virtual</h2>
+          <p>Lista completa de la fila con acciones disponibles.</p>
+        </div>
+      </header>
+
+      <FilterTabs options={TAB_OPTIONS} activeKey={activeTab} onChange={setActiveTab} />
+
+      {error && <div className="fila-error">{error}</div>}
+
+      <div className="fila-list">
+        {loading ? (
+          <div className="fila-loading">Cargando turnos...</div>
+        ) : filteredTurnos.length === 0 ? (
+          <div className="fila-empty">No hay turnos en esta categoría</div>
+        ) : (
+          filteredTurnos.map((turno) => (
+            <TurnoCard
+              key={turno.turnoId}
+              turno={turno}
+              onCall={handleCall}
+              onFinish={handleFinish}
+              onCancel={handleCancel}
+              onDetail={handleDetail}
+            />
+          ))
+        )}
+      </div>
+
+      <button className="fila-primary-button" type="button" onClick={handleCallNext} disabled={busy}>
+        {busy ? 'Procesando...' : 'Llamar siguiente'}
+      </button>
+    </div>
+  )
+}
+
+export default Fila

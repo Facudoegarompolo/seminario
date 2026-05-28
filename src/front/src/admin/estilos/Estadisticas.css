@@ -1,0 +1,186 @@
+.estadisticas-page {
+  min-height: 100vh;
+  padding: 24px 24px 32px;
+  background: #ffffff;
+}
+
+.estadisticas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.estadisticas-header h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.estadisticas-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+}
+
+.estadisticas-header select {
+  border-radius: 14px;
+  border: 1px solid #e6e9ee;
+  padding: 12px 14px;
+  background: #ffffff;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.estadisticas-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.estadistica-card {
+  background: #ffffff;
+  border: 1px solid #e6e9ee;
+  border-radius: 22px;
+  padding: 18px 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.estadistica-card span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.estadistica-card strong {
+  font-size: 28px;
+}
+
+.estadisticas-chart-card,
+.estadisticas-history-card {
+  background: #ffffff;
+  border: 1px solid #e6e9ee;
+  border-radius: 24px;
+  padding: 20px;
+}
+
+.chart-header h3,
+.estadisticas-history-card h3 {
+  margin: 0 0 16px;
+}
+
+.chart-plot {
+  min-height: 240px;
+  display: grid;
+  gap: 16px;
+}
+
+.chart-empty {
+  margin: 0;
+  color: #64748b;
+  text-align: center;
+}
+
+.chart-visualization {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.chart-axis {
+  display: grid;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 18px;
+  align-items: center;
+  justify-items: end;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.chart-graph {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-svg {
+  width: 100%;
+  min-width: 100%;
+  height: 260px;
+  display: block;
+}
+
+.chart-x-axis,
+.chart-grid-line {
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
+.chart-line {
+  stroke: #16a34a;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-point {
+  fill: #16a34a;
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.chart-labels {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+}
+
+.chart-labels span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid #e6e9ee;
+  background: #ffffff;
+}
+
+.history-row span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.history-row p {
+  margin: 0;
+  color: #0f172a;
+}
+
+@media (max-width: 960px) {
+  .estadisticas-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .estadisticas-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .estadisticas-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
