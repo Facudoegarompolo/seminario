@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import statsService from '../../shared/services/statsService'
+import BackButton from '../componentes/BackButton'
 import '../estilos/Estadisticas.css'
 
 const FILTER_OPTIONS = ['Hoy, 23 May', 'Ayer, 22 May', 'Semana']
@@ -11,20 +12,12 @@ const DEFAULT_SUMMARY = {
   maximoEspera: '0 min',
 }
 
-const MOCK_CHART_DATA = [
-  { label: '12 PM', value: 10 },
-  { label: '3 PM', value: 3 },
-  { label: '6 PM', value: 20 },
-  { label: '9 PM', value: 80 },
-]
-
 function Estadisticas() {
   const [summary, setSummary] = useState(DEFAULT_SUMMARY)
   const [events, setEvents] = useState([])
   const [chartData, setChartData] = useState([])
   const [selectedFilter, setSelectedFilter] = useState(FILTER_OPTIONS[0])
   const [loading, setLoading] = useState(true)
-  const useMockData = import.meta.env.DEV
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -54,6 +47,7 @@ function Estadisticas() {
 
   return (
     <div className="estadisticas-page">
+      <BackButton to="/admin/dashboard" />
       <header className="estadisticas-header">
         <div>
           <h2>Estadísticas</h2>
@@ -96,7 +90,7 @@ function Estadisticas() {
     {loading ? (
       <p className="chart-empty">Cargando datos...</p>
     ) : (() => {
-        const displayData = MOCK_CHART_DATA
+        const displayData = chartData
 
       if (displayData.length === 0) {
         return (

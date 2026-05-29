@@ -2,11 +2,14 @@
 import queueService from '../../shared/services/queueService'
 import FilterTabs from '../componentes/FilterTabs'
 import TurnoCard from '../componentes/TurnoCard'
+import BackButton from '../componentes/BackButton'
+import StatsButton from '../componentes/StatsButton'
+import { useNavigate } from 'react-router-dom'
 import '../estilos/Fila.css'
 
 const TAB_OPTIONS = [
-  { key: 'ALL', label: 'Todos' },
   { key: 'WAITING', label: 'En espera' },
+  { key: 'ALL', label: 'Todos' },
   { key: 'CALLED', label: 'Llamados' },
 ]
 
@@ -21,8 +24,9 @@ const STATUS_MAP = {
 }
 
 function Fila() {
+  const navigate = useNavigate()
   const [turnos, setTurnos] = useState([])
-  const [activeTab, setActiveTab] = useState('ALL')
+  const [activeTab, setActiveTab] = useState('WAITING')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -72,18 +76,8 @@ function Fila() {
     return enrichedTurnos
   }, [activeTab, enrichedTurnos])
 
-  const handleCallNext = async () => {
-    setBusy(true)
-    setError(null)
-
-    try {
-      await queueService.llamarSiguiente()
-      await fetchTurnos()
-    } catch (err) {
-      setError('No se pudo llamar al siguiente cliente.')
-    } finally {
-      setBusy(false)
-    }
+  const handleCallNext = () => {
+    navigate('/admin/llamar')
   }
 
   const handleCall = async () => {
@@ -134,6 +128,8 @@ function Fila() {
 
   return (
     <div className="fila-page">
+      <BackButton to="/admin/dashboard" />
+      <StatsButton />
       <header className="fila-header">
         <div>
           <h2>Fila virtual</h2>
@@ -151,16 +147,35 @@ function Fila() {
         ) : filteredTurnos.length === 0 ? (
           <div className="fila-empty">No hay turnos en esta categoría</div>
         ) : (
-          filteredTurnos.map((turno) => (
-            <TurnoCard
-              key={turno.turnoId}
-              turno={turno}
-              onCall={handleCall}
-              onFinish={handleFinish}
-              onCancel={handleCancel}
-              onDetail={handleDetail}
-            />
-          ))
+        filteredTurnos.map((turno) => (
+          <div key={turno.turnoId} className="fila-item">
+            <div className="fila-item-left">
+              <h3>#{turno.numeroTurno}</h3>
+
+              <div className="fila-item-meta">
+                <span className={`status-dot ${turno.statusColor}`} />
+                <span className="fila-status">
+                  {turno.estadoLabel}
+                </span>
+
+                <span className="fila-personas">
+                  • {turno.personas} personas
+                </span>
+              </div>
+            </div>
+
+            <div className="fila-item-right">
+              {['ESPERANDO', 'PROXIMO'].includes(turno.estado) ? (
+                <>
+                  <strong>{turno.tiempoEstimado}</strong>
+                  <span>aprox.</span>
+                </>
+              ) : (
+                <strong>—</strong>
+              )}
+            </div>
+          </div>
+        ))
         )}
       </div>
 

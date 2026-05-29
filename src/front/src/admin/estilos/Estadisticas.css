@@ -1,7 +1,8 @@
 .estadisticas-page {
   min-height: 100vh;
-  padding: 24px 24px 32px;
+  padding: 80px 24px 32px;
   background: #ffffff;
+  position: relative;
 }
 
 .estadisticas-header {

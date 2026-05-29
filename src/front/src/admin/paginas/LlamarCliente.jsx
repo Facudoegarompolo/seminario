@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import queueService from '../../shared/services/queueService'
+import BackButton from '../componentes/BackButton'
+import StatsButton from '../componentes/StatsButton'
 import '../estilos/LlamarCliente.css'
+import { useNavigate } from 'react-router-dom'
 
 function LlamarCliente() {
+  const navigate = useNavigate()
   const [turno, setTurno] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -33,13 +37,21 @@ function LlamarCliente() {
 
   const handleCall = async () => {
     if (!turno) return
+
     setBusy(true)
+
     try {
-      const response = await queueService.llamarSiguiente()
-      setTurno(response)
-      setMessage('El cliente ha sido notificado en su dispositivo móvil')
+      await queueService.llamarSiguiente()
+
+      await fetchTurno()
+
+      setMessage(
+        'El cliente ha sido notificado en su dispositivo móvil'
+      )
     } catch (error) {
-      setMessage('No se pudo llamar al cliente. Intenta nuevamente.')
+      setMessage(
+        'No se pudo llamar al cliente. Intenta nuevamente.'
+      )
     } finally {
       setBusy(false)
     }
@@ -48,7 +60,7 @@ function LlamarCliente() {
   const handleSkip = async () => {
     setBusy(true)
     try {
-      await queueService.llamarSiguiente()
+      await queueService.marcarNoPresentado(turno.turnoId)
       await fetchTurno()
     } catch (error) {
       setMessage('No se pudo saltar al siguiente cliente.')
@@ -59,6 +71,8 @@ function LlamarCliente() {
 
   return (
     <div className="llamar-page">
+      <BackButton to="/admin/fila" />
+      <StatsButton />
       <header className="llamar-header">
         <h2>Llamar al siguiente cliente</h2>
       </header>
