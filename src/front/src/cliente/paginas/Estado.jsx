@@ -47,7 +47,8 @@ function Estado() {
     try {
 
       const response = await fetch(
-        `http://192.168.0.103:8080/api/public/turnos/${turnoActual.tokenPublico}`,
+
+        `${import.meta.env.VITE_API_URL}/api/public/turnos/${turnoActual.tokenPublico}`,
         {
           method: 'DELETE'
         }
@@ -78,7 +79,7 @@ function Estado() {
     const consultarTurno = async () => {
       try {
         const response = await fetch(
-          `http://192.168.0.103:8080/api/public/turnos/${turnoActual.tokenPublico}`,)
+          `${import.meta.env.VITE_API_URL}/api/public/turnos/${turnoActual.tokenPublico}`,)
 
         const data = await response.json()
 

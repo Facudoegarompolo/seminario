@@ -6,20 +6,23 @@ import { useNavigate } from 'react-router-dom'
 import SelectorCantidad from '../componentes/SelectorCantidad'
 import { useState, useEffect } from 'react'
 
+
+// Lee la URL del backend desde el archivo .env
+const API_URL = import.meta.env.VITE_API_URL
+
 function Inicio() {
     const navigate = useNavigate()
 
     const [nombreCliente, setNombreCliente] = useState('')
     const [cantidadIntegrantes, setCantidadIntegrantes] = useState(1)
     const [estadoFila, setEstadoFila] = useState(null)
+
+
     const crearTurno = async () => {
-
         try {
-
             const response = await fetch(
-                'http://192.168.0.103:8080/api/public/filas/starbucks-uade/turnos',
+                `${API_URL}/api/public/filas/starbucks-uade/turnos`,
                 {
-
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -36,21 +39,19 @@ function Inicio() {
 
             console.log(data)
 
-            navigate('/estado', { state: data })//integramos json 
+            navigate('/estado', { state: data })
+
         } catch (error) {
-
-            console.error(error)
-
+            console.error('Error al crear turno:', error)
         }
     }
+
     useEffect(() => {
-
         const obtenerEstadoFila = async () => {
-
             try {
-
                 const response = await fetch(
-                    'http://192.168.0.103:8080/api/public/filas/starbucks-uade/estado',)
+                    `${API_URL}/api/public/filas/starbucks-uade/estado`
+                )
 
                 const data = await response.json()
 
@@ -60,8 +61,7 @@ function Inicio() {
 
             } catch (error) {
 
-                console.error(error)
-
+                console.error('Error al obtener estado de fila:', error)
             }
         }
 
@@ -69,6 +69,7 @@ function Inicio() {
 
     }, [])
     return (
+
 
         <main className="pantalla">
 
@@ -116,9 +117,7 @@ function Inicio() {
                     Ingrese su nombre para anotarse en la fila
                 </p>
 
-                <div
-
-                    onClick={crearTurno}                  >
+                <div onClick={crearTurno}>
                     <BotonPrincipal>
                         Anotarme
                     </BotonPrincipal>

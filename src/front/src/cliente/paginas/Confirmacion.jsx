@@ -1,19 +1,35 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import logoMcDonalds from '../assets/mcdonalds.webp'
 import TarjetaEstado from '../componentes/TarjetaEstado'
 
 function Confirmacion() {
     const navigate = useNavigate()
+    const location = useLocation()
+
+    // Recibe los datos del turno que manda Inicio.jsx
+    const turno = location.state
+
+    // Calcula la hora estimada de presentación
+    const horaEstimada = new Date()
+    horaEstimada.setMinutes(
+        horaEstimada.getMinutes() + (turno?.tiempoEstimadoMinutos || 0)
+    )
+    const horaPresentacion = horaEstimada.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    })
 
     useEffect(() => {
+
         const timer = setTimeout(() => {
-            navigate('/estado')
+            // Le pasa los datos del turno a la pantalla de estado
+            navigate('/estado', { state: turno })
         }, 2500)
 
         return () => clearTimeout(timer)
-    }, [navigate])
+    }, [navigate, turno])
 
     return (
         <main className="pantalla">
@@ -34,31 +50,31 @@ function Confirmacion() {
 
                 <h1>¡Te uniste a la fila!</h1>
 
-                <p>
-                    Ya estás en la lista de espera.
-                </p>
+                <p>Ya estás en la lista de espera.</p>
             </section>
 
             <section className="grilla-estado grilla-confirmacion">
+
                 <TarjetaEstado
                     titulo="Hora en que debe presentarse"
-                    valor="9:23 PM"
+                    valor={horaPresentacion}              // antes: "9:23 PM"
                 />
 
                 <TarjetaEstado
                     titulo="Tiempo de espera estimado"
-                    valor="15 min"
+                    valor={`${turno?.tiempoEstimadoMinutos ?? 0} min`}  // antes: "15 min"
                 />
 
                 <TarjetaEstado
                     titulo="Mi número"
-                    valor="23"
+                    valor={turno?.numeroTurno ?? '-'}     // antes: "23"
                 />
 
                 <TarjetaEstado
                     titulo="Puesto en fila"
-                    valor="5"
+                    valor={(turno?.personasAdelante ?? 0) + 1}  // antes: "5"
                 />
+
             </section>
 
             <section className="mensaje-exito">
@@ -70,7 +86,7 @@ function Confirmacion() {
                 DQ
             </footer>
 
-        </main>
+        </main >
     )
 }
 
