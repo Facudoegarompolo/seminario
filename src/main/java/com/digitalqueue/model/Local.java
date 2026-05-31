@@ -1,3 +1,5 @@
+package com.digitalqueue.model;
+
 import com.digitalqueue.model.enums.TipoOperacionLocal;
 import jakarta.persistence.*;
 import lombok.*;

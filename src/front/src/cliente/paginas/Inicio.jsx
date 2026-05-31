@@ -5,8 +5,12 @@ import { useNavigate } from 'react-router-dom'
 //import { useState } from 'react'
 import SelectorCantidad from '../componentes/SelectorCantidad'
 import { useState, useEffect } from 'react'
+import { registrarPushNotifications } from '../utils/pushNotifications'
 
 
+//if (turno?.tokenPublico) { //agregamos notificacion
+//         registrarPushNotifications(turno.tokenPublico)
+//   }
 // Lee la URL del backend desde el archivo .env
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -14,10 +18,14 @@ function Inicio() {
     const navigate = useNavigate()
 
     const [nombreCliente, setNombreCliente] = useState('')
+
+
     const [cantidadIntegrantes, setCantidadIntegrantes] = useState(1)
+
     const [estadoFila, setEstadoFila] = useState(null)
 
-
+    const [turnoCreado, setTurnoCreado] = useState(null)
+    const [notificacionesActivadas, setNotificacionesActivadas] = useState(false)
     const crearTurno = async () => {
         try {
             const response = await fetch(
@@ -36,11 +44,15 @@ function Inicio() {
             )
 
             const data = await response.json()
+            setTurnoCreado(data)
 
-            console.log(data)
+            if (notificacionesActivadas) {
 
+                await registrarPushNotifications(
+                    data.tokenPublico
+                )
+            }
             navigate('/estado', { state: data })
-
         } catch (error) {
             console.error('Error al crear turno:', error)
         }
@@ -116,7 +128,32 @@ function Inicio() {
                 <p>
                     Ingrese su nombre para anotarse en la fila
                 </p>
+                <section className="seccion-notificaciones">
 
+                    <div className="texto-notificaciones">
+
+
+                        <p>
+                            Active si quiere que le avisemos su turno
+                        </p>
+
+                    </div>
+
+                    <label className="switch">
+
+                        <input
+                            type="checkbox"
+                            checked={notificacionesActivadas}
+                            onChange={() =>
+                                setNotificacionesActivadas(!notificacionesActivadas)
+                            }
+                        />
+
+                        <span className="slider"></span>
+
+                    </label>
+
+                </section>
                 <div onClick={crearTurno}>
                     <BotonPrincipal>
                         Anotarme

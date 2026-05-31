@@ -23,6 +23,7 @@ function Confirmacion() {
 
     useEffect(() => {
 
+
         const timer = setTimeout(() => {
             // Le pasa los datos del turno a la pantalla de estado
             navigate('/estado', { state: turno })

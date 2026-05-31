@@ -83,6 +83,9 @@ public class PushNotificationService {
 
     @Transactional
     public void registrarNotificacionPendiente(Turno turno, TipoNotificacion tipo) {
+        System.out.println("=== REGISTRANDO PUSH ===");
+        System.out.println("Turno: " + turno.getId());
+        System.out.println("Tipo: " + tipo);
         if (turno == null || turno.getId() == null) {
             return;
         }
@@ -120,6 +123,8 @@ public class PushNotificationService {
                 }
                 continue;
             }
+            System.out.println("=== ENVIANDO PUSH ===");
+            System.out.println("Endpoint: " + subscription.getEndpoint());
 
             enviarNotificacion(pushService, subscription, notificacion, turno);
         }
@@ -133,15 +138,13 @@ public class PushNotificationService {
             PushService pushService,
             PushSubscription subscription,
             NotificacionPush notificacion,
-            Turno turno
-    ) {
+            Turno turno) {
         try {
             Notification notification = new Notification(
                     subscription.getEndpoint(),
                     subscription.getP256dh(),
                     subscription.getAuth(),
-                    crearPayload(notificacion, turno)
-            );
+                    crearPayload(notificacion, turno));
 
             HttpResponse response = pushService.send(notification);
             int statusCode = response.getStatusLine().getStatusCode();

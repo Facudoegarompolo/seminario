@@ -48,13 +48,7 @@ function BloqueSeguimiento({ turno }) {
             </section>
 
             <section className="notificacion">
-                <div>
-                    <h3>Notificación de turno</h3>
 
-                    <p>
-                        Active si quiere que le avisemos su turno
-                    </p>
-                </div>
 
                 <label className="switch">
                     <input type="checkbox" />
