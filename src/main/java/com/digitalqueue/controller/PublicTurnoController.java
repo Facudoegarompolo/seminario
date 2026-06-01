@@ -28,4 +28,12 @@ public class PublicTurnoController {
         TurnoEstadoResponse response = turnoService.cancelarTurno(tokenPublico);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{tokenPublico}/cancelar")
+    public ResponseEntity<TurnoEstadoResponse> cancelarTurnoPorPost(
+            @PathVariable String tokenPublico
+    ) {
+        TurnoEstadoResponse response = turnoService.cancelarTurno(tokenPublico);
+        return ResponseEntity.ok(response);
+    }
 }

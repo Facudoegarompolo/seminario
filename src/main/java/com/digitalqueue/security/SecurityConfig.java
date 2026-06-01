@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -39,10 +41,16 @@ public class SecurityConfig {
                         // Más adelante esto cambia a authenticated()
                         .requestMatchers("/api/admin/**").permitAll()
 
-                        // Cualquier otra ruta queda bloqueada
-                        .anyRequest().authenticated()
+                        // TEMPORAL MVP/testing: no exigimos JWT en ningun endpoint.
+                        // La configuracion de seguridad queda lista para reactivar authenticated().
+                        .anyRequest().permitAll()
                 );
 
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

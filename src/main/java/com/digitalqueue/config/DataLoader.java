@@ -4,16 +4,20 @@ import com.digitalqueue.model.Fila;
 import com.digitalqueue.model.Local;
 import com.digitalqueue.model.PuntoAcceso;
 import com.digitalqueue.model.enums.EstadoFila;
+import com.digitalqueue.model.enums.QueueStatus;
 import com.digitalqueue.model.enums.TipoAcceso;
+import com.digitalqueue.model.enums.TipoDia;
 import com.digitalqueue.repository.FilaRepository;
 import com.digitalqueue.repository.LocalRepository;
 import com.digitalqueue.repository.PuntoAccesoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.core.annotation.Order;
 
 @Component
 @RequiredArgsConstructor
+@Order(1)
 public class DataLoader implements CommandLineRunner {
 
     private final LocalRepository localRepository;
@@ -30,6 +34,8 @@ public class DataLoader implements CommandLineRunner {
                 .nombre("Starbucks UADE")
                 .direccion("Lima 775")
                 .activo(true)
+                .capacidadMaxima(20)
+                .personasActuales(0)
                 .build();
 
         Local localGuardado = localRepository.save(local);
@@ -38,6 +44,8 @@ public class DataLoader implements CommandLineRunner {
                 .local(localGuardado)
                 .nombre("Caja principal")
                 .estado(EstadoFila.ABIERTA)
+                .queueStatus(QueueStatus.NORMAL)
+                .tipoDia(TipoDia.NORMAL)
                 .tiempoPromedioAtencionMinutos(3)
                 .build();
 
