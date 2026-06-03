@@ -16,52 +16,5 @@ services:
       timeout: 5s
       retries: 10
 
-  cassandra:
-    image: cassandra:5.0
-    container_name: digitalqueue-cassandra
-    environment:
-      CASSANDRA_CLUSTER_NAME: digitalqueue-cluster
-      CASSANDRA_DC: datacenter1
-      CASSANDRA_RACK: rack1
-      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
-    ports:
-      - "9042:9042"
-    volumes:
-      - cassandra_data:/var/lib/cassandra
-    healthcheck:
-      test: ["CMD-SHELL", "cqlsh localhost 9042 -e 'DESCRIBE KEYSPACES' || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 20
-      start_period: 60s
-  cassandra-init:
-    image: cassandra:5.0
-    container_name: digitalqueue-cassandra-init
-    depends_on:
-      cassandra:
-        condition: service_healthy
-    volumes:
-      - ./docker/cassandra/schema.cql:/schema.cql:ro
-    entrypoint: ["/bin/bash", "-c"]
-    command: >
-      "
-      echo 'Esperando Cassandra...';
-
-      until cqlsh digitalqueue-cassandra 9042 -e 'DESCRIBE KEYSPACES'; do
-        echo 'Cassandra todavía no está lista...';
-        sleep 5;
-      done;
-
-      echo 'Ejecutando schema.cql...';
-      cqlsh digitalqueue-cassandra 9042 -f /schema.cql;
-
-      echo 'Verificando keyspace...';
-      cqlsh digitalqueue-cassandra 9042 -e 'DESCRIBE KEYSPACES';
-
-      echo 'Init terminado.';
-      "
-    restart: "no"
-    
 volumes:
   postgres_data:
-  cassandra_data:

@@ -1,21 +1,18 @@
 package com.digitalqueue.config;
 
-import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.digitalqueue.model.Fila;
+import com.digitalqueue.model.Turno;
 import com.digitalqueue.model.enums.QueueStatus;
 import com.digitalqueue.model.enums.TipoCliente;
 import com.digitalqueue.repository.FilaRepository;
+import com.digitalqueue.service.metrics.MetricasFilaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 
 @Slf4j
@@ -24,49 +21,8 @@ import java.util.List;
 @Order(2)
 public class MetricasDemoDataLoader implements CommandLineRunner {
 
-    private static final ZoneId ZONA_APP = ZoneId.systemDefault();
-
-    private static final String INSERT_INSCRIPCION = """
-            INSERT INTO metricas_inscripcion_por_fila_dia (
-                fila_id,
-                fecha,
-                created_at,
-                turno_id,
-                cantidad_integrantes,
-                nombre_cliente,
-                tipo_cliente,
-                personas_adelante,
-                queue_status,
-                tiempo_estimado_informado,
-                tiempo_estimado_minimo,
-                tiempo_estimado_maximo,
-                dia_semana,
-                franja_horaria
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """;
-
-    private static final String INSERT_LLAMADO = """
-            INSERT INTO metricas_llamado_por_fila_dia (
-                fila_id,
-                fecha,
-                called_at,
-                turno_id,
-                tiempo_real_espera,
-                error_prediccion
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            """;
-
-    private static final String COUNT_INSCRIPCIONES = """
-            SELECT count(*)
-            FROM metricas_inscripcion_por_fila_dia
-            WHERE fila_id = ?
-              AND fecha = ?
-              AND created_at >= ?
-              AND created_at < ?
-            """;
-
     private final FilaRepository filaRepository;
-    private final CqlSession cqlSession;
+    private final MetricasFilaService metricasFilaService;
 
     @Override
     public void run(String... args) {
@@ -87,7 +43,7 @@ public class MetricasDemoDataLoader implements CommandLineRunner {
                 insertarMetricasHistoricas(fila, ahora);
             }
         } catch (RuntimeException ex) {
-            log.warn("No se pudieron sembrar métricas demo en Cassandra: {}", ex.getMessage());
+            log.warn("No se pudieron sembrar metricas demo en SQL: {}", ex.getMessage());
         }
     }
 
@@ -122,35 +78,36 @@ public class MetricasDemoDataLoader implements CommandLineRunner {
             Integer tiempoMinimo,
             Integer tiempoMaximo
     ) {
-        cqlSession.execute(SimpleStatement.newInstance(
-                INSERT_INSCRIPCION,
-                fila.getId(),
-                createdAt.toLocalDate(),
-                toInstant(createdAt),
-                turnoId,
-                cantidadIntegrantes,
-                "Cliente demo",
-                TipoCliente.ANONIMO.name(),
-                personasAdelante,
-                QueueStatus.NORMAL.name(),
-                tiempoEstimado,
-                tiempoMinimo,
-                tiempoMaximo,
-                createdAt.getDayOfWeek().name(),
-                createdAt.getHour()
-        ));
+        Turno turno = Turno.builder()
+                .id(turnoId)
+                .fila(fila)
+                .createdAt(createdAt)
+                .cantidadIntegrantes(cantidadIntegrantes)
+                .nombreCliente("Cliente demo")
+                .tipoCliente(TipoCliente.ANONIMO)
+                .personasAdelanteAlAnotarse(personasAdelante)
+                .queueStatusAlAnotarse(QueueStatus.NORMAL)
+                .tiempoEstimadoInformadoMinutos(tiempoEstimado)
+                .tiempoEstimadoMinimoMinutos(tiempoMinimo)
+                .tiempoEstimadoMaximoMinutos(tiempoMaximo)
+                .diaSemana(createdAt.getDayOfWeek())
+                .franjaHoraria(createdAt.getHour())
+                .build();
+
+        metricasFilaService.registrarInscripcion(turno);
     }
 
     private void insertarLlamado(Fila fila, LocalDateTime calledAt, Long turnoId, Integer tiempoReal, Integer errorPrediccion) {
-        cqlSession.execute(SimpleStatement.newInstance(
-                INSERT_LLAMADO,
-                fila.getId(),
-                calledAt.toLocalDate(),
-                toInstant(calledAt),
-                turnoId,
-                tiempoReal,
-                errorPrediccion
-        ));
+        Turno turno = Turno.builder()
+                .id(turnoId)
+                .fila(fila)
+                .createdAt(calledAt.minusMinutes(tiempoReal == null ? 0 : tiempoReal))
+                .calledAt(calledAt)
+                .tiempoRealEsperaMinutos(tiempoReal)
+                .errorPrediccionMinutos(errorPrediccion)
+                .build();
+
+        metricasFilaService.registrarLlamado(turno);
     }
 
     private long contarHistoricoMismaFranja(Long filaId, LocalDateTime ahora) {
@@ -166,18 +123,6 @@ public class MetricasDemoDataLoader implements CommandLineRunner {
     }
 
     private long contarInscripciones(Long filaId, LocalDateTime desde, LocalDateTime hasta) {
-        Row row = cqlSession.execute(SimpleStatement.newInstance(
-                COUNT_INSCRIPCIONES,
-                filaId,
-                desde.toLocalDate(),
-                toInstant(desde),
-                toInstant(hasta)
-        )).one();
-
-        return row == null ? 0L : row.getLong(0);
-    }
-
-    private Instant toInstant(LocalDateTime fechaHora) {
-        return fechaHora.atZone(ZONA_APP).toInstant();
+        return metricasFilaService.contarInscripcionesEntre(filaId, desde, hasta);
     }
 }
