@@ -1,7 +1,13 @@
 docker compose up -d
-para levantar la base desde terminal visual
+para levantar la base PostgreSQL desde terminal visual
+
+Variables utiles para Render o una base SQL en la nube:
+- SPRING_DATASOURCE_URL=jdbc:postgresql://host:puerto/base
+- SPRING_DATASOURCE_USERNAME=usuario
+- SPRING_DATASOURCE_PASSWORD=password
 
 Cambios backend
+- Las metricas del algoritmo de fila ahora se guardan en la misma base SQL/PostgreSQL del backend. Ya no hace falta levantar Cassandra.
 - Las dependencias spring-boot-starter-webmvc-test y spring-boot-starter-websocket-test ya estaban agregadas: sirven para testear controladores MVC y WebSocket.
 - Se agrego soporte real para Web Push con VAPID usando la dependencia nl.martijndwars:web-push.
 - Nuevo endpoint publico: GET /api/public/push/public-key para que el front obtenga la clave publica VAPID.

@@ -1,94 +1,32 @@
 package com.digitalqueue.service.metrics;
 
-import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.ResultSet;
-import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.digitalqueue.model.Turno;
+import com.digitalqueue.model.metrics.MetricaInscripcionFilaDia;
+import com.digitalqueue.model.metrics.MetricaInscripcionFilaDiaId;
+import com.digitalqueue.model.metrics.MetricaLlegadasFranja;
+import com.digitalqueue.model.metrics.MetricaLlegadasFranjaId;
+import com.digitalqueue.model.metrics.MetricaLlamadoFilaDia;
+import com.digitalqueue.repository.metrics.MetricaInscripcionFilaDiaRepository;
+import com.digitalqueue.repository.metrics.MetricaLlegadasFranjaRepository;
+import com.digitalqueue.repository.metrics.MetricaLlamadoFilaDiaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class MetricasFilaService {
 
-    private static final ZoneId ZONA_APP = ZoneId.systemDefault();
+    private final MetricaInscripcionFilaDiaRepository inscripcionRepository;
+    private final MetricaLlamadoFilaDiaRepository llamadoRepository;
+    private final MetricaLlegadasFranjaRepository llegadasFranjaRepository;
 
-    private static final String INSERT_INSCRIPCION = """
-            INSERT INTO metricas_inscripcion_por_fila_dia (
-                fila_id,
-                fecha,
-                created_at,
-                turno_id,
-                cantidad_integrantes,
-                nombre_cliente,
-                tipo_cliente,
-                personas_adelante,
-                queue_status,
-                tiempo_estimado_informado,
-                tiempo_estimado_minimo,
-                tiempo_estimado_maximo,
-                dia_semana,
-                franja_horaria
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """;
-
-    private static final String INSERT_LLAMADO = """
-            INSERT INTO metricas_llamado_por_fila_dia (
-                fila_id,
-                fecha,
-                called_at,
-                turno_id,
-                tiempo_real_espera,
-                error_prediccion
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            """;
-
-    private static final String UPDATE_LLEGADAS_POR_FRANJA = """
-            UPDATE metricas_llegadas_por_franja
-            SET cantidad = cantidad + 1
-            WHERE fila_id = ?
-              AND dia_semana = ?
-              AND franja_horaria = ?
-              AND fecha = ?
-            """;
-
-    private static final String COUNT_INSCRIPCIONES_POR_FECHA = """
-            SELECT count(*)
-            FROM metricas_inscripcion_por_fila_dia
-            WHERE fila_id = ?
-              AND fecha = ?
-              AND created_at >= ?
-              AND created_at < ?
-            """;
-
-    private static final String COUNT_LLAMADOS_POR_FECHA = """
-            SELECT count(*)
-            FROM metricas_llamado_por_fila_dia
-            WHERE fila_id = ?
-              AND fecha = ?
-              AND called_at >= ?
-              AND called_at < ?
-            """;
-
-    private static final String SELECT_ERRORES_POR_FECHA = """
-            SELECT error_prediccion
-            FROM metricas_llamado_por_fila_dia
-            WHERE fila_id = ?
-              AND fecha = ?
-              AND called_at >= ?
-              AND called_at < ?
-            """;
-
-    private final CqlSession cqlSession;
-
+    @Transactional
     public void registrarInscripcion(Turno turno) {
         if (!turnoTieneDatosMinimos(turno) || turno.getCreatedAt() == null) {
             return;
@@ -99,33 +37,37 @@ public class MetricasFilaService {
         String diaSemana = obtenerDiaSemana(turno, createdAt);
         Integer franjaHoraria = obtenerFranjaHoraria(turno, createdAt);
 
-        cqlSession.execute(SimpleStatement.newInstance(
-                INSERT_INSCRIPCION,
+        MetricaInscripcionFilaDiaId id = new MetricaInscripcionFilaDiaId(
                 turno.getFila().getId(),
                 fecha,
-                toInstant(createdAt),
-                turno.getId(),
-                valorEntero(turno.getCantidadIntegrantes(), 1),
-                turno.getNombreCliente(),
-                turno.getTipoCliente() == null ? null : turno.getTipoCliente().name(),
-                valorLong(turno.getPersonasAdelanteAlAnotarse(), 0L),
-                turno.getQueueStatusAlAnotarse() == null ? null : turno.getQueueStatusAlAnotarse().name(),
-                turno.getTiempoEstimadoInformadoMinutos(),
-                turno.getTiempoEstimadoMinimoMinutos(),
-                turno.getTiempoEstimadoMaximoMinutos(),
-                diaSemana,
-                franjaHoraria
-        ));
+                createdAt,
+                turno.getId()
+        );
+        boolean esNuevaInscripcion = !inscripcionRepository.existsById(id);
 
-        cqlSession.execute(SimpleStatement.newInstance(
-                UPDATE_LLEGADAS_POR_FRANJA,
-                turno.getFila().getId(),
-                diaSemana,
-                franjaHoraria,
-                fecha
-        ));
+        inscripcionRepository.save(MetricaInscripcionFilaDia.builder()
+                .filaId(turno.getFila().getId())
+                .fecha(fecha)
+                .createdAt(createdAt)
+                .turnoId(turno.getId())
+                .cantidadIntegrantes(valorEntero(turno.getCantidadIntegrantes(), 1))
+                .nombreCliente(turno.getNombreCliente())
+                .tipoCliente(turno.getTipoCliente() == null ? null : turno.getTipoCliente().name())
+                .personasAdelante(valorLong(turno.getPersonasAdelanteAlAnotarse(), 0L))
+                .queueStatus(turno.getQueueStatusAlAnotarse() == null ? null : turno.getQueueStatusAlAnotarse().name())
+                .tiempoEstimadoInformado(turno.getTiempoEstimadoInformadoMinutos())
+                .tiempoEstimadoMinimo(turno.getTiempoEstimadoMinimoMinutos())
+                .tiempoEstimadoMaximo(turno.getTiempoEstimadoMaximoMinutos())
+                .diaSemana(diaSemana)
+                .franjaHoraria(franjaHoraria)
+                .build());
+
+        if (esNuevaInscripcion) {
+            incrementarLlegadasPorFranja(turno.getFila().getId(), diaSemana, franjaHoraria, fecha);
+        }
     }
 
+    @Transactional
     public void registrarLlamado(Turno turno) {
         if (!turnoTieneDatosMinimos(turno) || turno.getCalledAt() == null) {
             return;
@@ -133,25 +75,43 @@ public class MetricasFilaService {
 
         LocalDateTime calledAt = turno.getCalledAt();
 
-        cqlSession.execute(SimpleStatement.newInstance(
-                INSERT_LLAMADO,
-                turno.getFila().getId(),
-                calledAt.toLocalDate(),
-                toInstant(calledAt),
-                turno.getId(),
-                valorEntero(turno.getTiempoRealEsperaMinutos(), 0),
-                valorEntero(turno.getErrorPrediccionMinutos(), 0)
-        ));
+        llamadoRepository.save(MetricaLlamadoFilaDia.builder()
+                .filaId(turno.getFila().getId())
+                .fecha(calledAt.toLocalDate())
+                .calledAt(calledAt)
+                .turnoId(turno.getId())
+                .tiempoRealEspera(valorEntero(turno.getTiempoRealEsperaMinutos(), 0))
+                .errorPrediccion(valorEntero(turno.getErrorPrediccionMinutos(), 0))
+                .build());
     }
 
+    @Transactional(readOnly = true)
     public long contarInscripcionesEntre(Long filaId, LocalDateTime desde, LocalDateTime hasta) {
-        return sumarPorDia(filaId, desde, hasta, COUNT_INSCRIPCIONES_POR_FECHA);
+        if (consultaInvalida(filaId, desde, hasta)) {
+            return 0L;
+        }
+
+        return inscripcionRepository.countByFilaIdAndCreatedAtGreaterThanEqualAndCreatedAtBefore(
+                filaId,
+                desde,
+                hasta
+        );
     }
 
+    @Transactional(readOnly = true)
     public long contarLlamadosEntre(Long filaId, LocalDateTime desde, LocalDateTime hasta) {
-        return sumarPorDia(filaId, desde, hasta, COUNT_LLAMADOS_POR_FECHA);
+        if (consultaInvalida(filaId, desde, hasta)) {
+            return 0L;
+        }
+
+        return llamadoRepository.countByFilaIdAndCalledAtGreaterThanEqualAndCalledAtBefore(
+                filaId,
+                desde,
+                hasta
+        );
     }
 
+    @Transactional(readOnly = true)
     public long contarHistoricoPorDiaYFranja(
             Long filaId,
             LocalDateTime desde,
@@ -159,102 +119,54 @@ public class MetricasFilaService {
             DayOfWeek diaSemana,
             Integer franjaHoraria
     ) {
-        if (filaId == null || desde == null || hasta == null || !desde.isBefore(hasta)) {
+        if (consultaInvalida(filaId, desde, hasta) || diaSemana == null) {
             return 0L;
         }
 
         int hora = franjaHoraria == null ? LocalDateTime.now().getHour() : franjaHoraria;
-        long total = 0L;
-        LocalDate fecha = desde.toLocalDate();
-        LocalDate fechaHasta = hasta.toLocalDate();
 
-        while (!fecha.isAfter(fechaHasta)) {
-            if (fecha.getDayOfWeek() == diaSemana) {
-                LocalDateTime inicioFranja = fecha.atTime(hora, 0);
-                LocalDateTime finFranja = inicioFranja.plusHours(1);
-                LocalDateTime inicioConsulta = max(inicioFranja, desde);
-                LocalDateTime finConsulta = min(finFranja, hasta);
-
-                if (inicioConsulta.isBefore(finConsulta)) {
-                    total += contarInscripcionesEntre(filaId, inicioConsulta, finConsulta);
-                }
-            }
-            fecha = fecha.plusDays(1);
-        }
-
-        return total;
+        return inscripcionRepository
+                .countByFilaIdAndDiaSemanaAndFranjaHorariaAndCreatedAtGreaterThanEqualAndCreatedAtBefore(
+                        filaId,
+                        diaSemana.name(),
+                        hora,
+                        desde,
+                        hasta
+                );
     }
 
+    @Transactional(readOnly = true)
     public double promedioErrorPrediccionDesde(Long filaId, LocalDateTime desde, LocalDateTime hasta) {
-        if (filaId == null || desde == null || hasta == null || !desde.isBefore(hasta)) {
+        if (consultaInvalida(filaId, desde, hasta)) {
             return 0.0;
         }
 
-        long suma = 0L;
-        long cantidad = 0L;
-        LocalDate fecha = desde.toLocalDate();
-        LocalDate fechaHasta = hasta.toLocalDate();
-
-        while (!fecha.isAfter(fechaHasta)) {
-            LocalDateTime inicioDia = fecha.atStartOfDay();
-            LocalDateTime finDia = inicioDia.plusDays(1);
-            LocalDateTime inicioConsulta = max(desde, inicioDia);
-            LocalDateTime finConsulta = min(hasta, finDia);
-
-            if (inicioConsulta.isBefore(finConsulta)) {
-                ResultSet resultSet = cqlSession.execute(SimpleStatement.newInstance(
-                        SELECT_ERRORES_POR_FECHA,
-                        filaId,
-                        fecha,
-                        toInstant(inicioConsulta),
-                        toInstant(finConsulta)
-                ));
-
-                for (Row row : resultSet) {
-                    if (!row.isNull("error_prediccion")) {
-                        suma += row.getInt("error_prediccion");
-                        cantidad++;
-                    }
-                }
-            }
-
-            fecha = fecha.plusDays(1);
-        }
-
-        return cantidad == 0 ? 0.0 : suma / (double) cantidad;
+        return llamadoRepository.promedioErrorPrediccionDesde(filaId, desde, hasta);
     }
 
-    private long sumarPorDia(Long filaId, LocalDateTime desde, LocalDateTime hasta, String cql) {
-        if (filaId == null || desde == null || hasta == null || !desde.isBefore(hasta)) {
-            return 0L;
-        }
+    private boolean consultaInvalida(Long filaId, LocalDateTime desde, LocalDateTime hasta) {
+        return filaId == null || desde == null || hasta == null || !desde.isBefore(hasta);
+    }
 
-        long total = 0L;
-        LocalDate fecha = desde.toLocalDate();
-        LocalDate fechaHasta = hasta.toLocalDate();
+    private void incrementarLlegadasPorFranja(Long filaId, String diaSemana, Integer franjaHoraria, LocalDate fecha) {
+        MetricaLlegadasFranjaId id = new MetricaLlegadasFranjaId(
+                filaId,
+                diaSemana,
+                franjaHoraria,
+                fecha
+        );
 
-        while (!fecha.isAfter(fechaHasta)) {
-            LocalDateTime inicioDia = fecha.atStartOfDay();
-            LocalDateTime finDia = inicioDia.plusDays(1);
-            LocalDateTime inicioConsulta = max(desde, inicioDia);
-            LocalDateTime finConsulta = min(hasta, finDia);
+        MetricaLlegadasFranja metrica = llegadasFranjaRepository.findById(id)
+                .orElseGet(() -> MetricaLlegadasFranja.builder()
+                        .filaId(filaId)
+                        .diaSemana(diaSemana)
+                        .franjaHoraria(franjaHoraria)
+                        .fecha(fecha)
+                        .cantidad(0L)
+                        .build());
 
-            if (inicioConsulta.isBefore(finConsulta)) {
-                ResultSet resultSet = cqlSession.execute(SimpleStatement.newInstance(
-                        cql,
-                        filaId,
-                        fecha,
-                        toInstant(inicioConsulta),
-                        toInstant(finConsulta)
-                ));
-                Row row = resultSet.one();
-                total += row == null ? 0L : row.getLong(0);
-            }
-
-            fecha = fecha.plusDays(1);
-        }
-
-        return total;
+        metrica.setCantidad(valorLong(metrica.getCantidad(), 0L) + 1);
+        llegadasFranjaRepository.save(metrica);
     }
 
     private boolean turnoTieneDatosMinimos(Turno turno) {
@@ -272,23 +184,11 @@ public class MetricasFilaService {
         return turno.getFranjaHoraria() == null ? fechaHora.getHour() : turno.getFranjaHoraria();
     }
 
-    private Instant toInstant(LocalDateTime fechaHora) {
-        return fechaHora.atZone(ZONA_APP).toInstant();
-    }
-
     private Integer valorEntero(Integer valor, Integer defaultValue) {
         return Objects.requireNonNullElse(valor, defaultValue);
     }
 
     private Long valorLong(Long valor, Long defaultValue) {
         return Objects.requireNonNullElse(valor, defaultValue);
-    }
-
-    private LocalDateTime max(LocalDateTime a, LocalDateTime b) {
-        return a.isAfter(b) ? a : b;
-    }
-
-    private LocalDateTime min(LocalDateTime a, LocalDateTime b) {
-        return a.isBefore(b) ? a : b;
     }
 }

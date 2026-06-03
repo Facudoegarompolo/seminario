@@ -145,7 +145,7 @@ class EstimacionEsperaServiceTest {
     private static class MetricasSinActividadService extends MetricasFilaService {
 
         MetricasSinActividadService() {
-            super(null);
+            super(null, null, null);
         }
 
         @Override
