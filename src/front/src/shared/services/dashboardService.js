@@ -1,12 +1,16 @@
 import api from './api'
 
 const dashboardService = {
-  getSummary: async () => {
-    const response = await api.get('/admin/dashboard/summary')
+  getSummary: async (filaId) => {
+    const response = await api.get('/admin/dashboard/summary', {
+      params: filaId ? { filaId } : undefined,
+    })
     return response.data
   },
-  getRealtimeEvents: async () => {
-    const response = await api.get('/admin/dashboard/realtime')
+  getRealtimeEvents: async (filaId) => {
+    const response = await api.get('/admin/dashboard/realtime', {
+      params: filaId ? { filaId } : undefined,
+    })
     return response.data
   },
 }
