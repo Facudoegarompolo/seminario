@@ -1,7 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import queueService from '../../shared/services/queueService'
 import FilterTabs from '../componentes/FilterTabs'
-import TurnoCard from '../componentes/TurnoCard'
 import BackButton from '../componentes/BackButton'
 import StatsButton from '../componentes/StatsButton'
 import { useNavigate } from 'react-router-dom'
@@ -29,7 +28,6 @@ function Fila() {
   const [activeTab, setActiveTab] = useState('WAITING')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [busy, setBusy] = useState(false)
 
   const fetchTurnos = async () => {
     setLoading(true)
@@ -38,7 +36,7 @@ function Fila() {
     try {
       const data = await queueService.getTurnos()
       setTurnos(Array.isArray(data) ? data : [])
-    } catch (err) {
+    } catch {
       setError('No se pudo cargar la fila. Intenta nuevamente.')
     } finally {
       setLoading(false)
@@ -46,13 +44,14 @@ function Fila() {
   }
 
   useEffect(() => {
-    fetchTurnos()
+    const timer = window.setTimeout(fetchTurnos, 0)
+    return () => window.clearTimeout(timer)
   }, [])
 
   const enrichedTurnos = useMemo(() => {
     return turnos.map((turno, index) => {
       const statusInfo = STATUS_MAP[turno.estado] || { label: turno.estado, color: 'gray' }
-      const personas = turno.personas ?? 1
+      const personas = turno.cantidadIntegrantes ?? 1
       const tiempoEstimado = turno.tiempoEstimadoMinutos ? `${turno.tiempoEstimadoMinutos} min` : `${(index + 1) * 5} min`
 
       return {
@@ -78,52 +77,6 @@ function Fila() {
 
   const handleCallNext = () => {
     navigate('/admin/llamar')
-  }
-
-  const handleCall = async () => {
-    setBusy(true)
-    setError(null)
-
-    try {
-      await queueService.llamarSiguiente()
-      await fetchTurnos()
-    } catch (err) {
-      setError('No se pudo llamar al cliente.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const handleFinish = async (turno) => {
-    setBusy(true)
-    setError(null)
-
-    try {
-      await queueService.finalizarTurno(turno.turnoId)
-      await fetchTurnos()
-    } catch (err) {
-      setError('No se pudo marcar el turno como atendido.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const handleCancel = async (turno) => {
-    setBusy(true)
-    setError(null)
-
-    try {
-      await queueService.marcarNoPresentado(turno.turnoId)
-      await fetchTurnos()
-    } catch (err) {
-      setError('No se pudo cancelar el turno.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const handleDetail = (turno) => {
-    window.alert(`Detalle de turno #${turno.numeroTurno}`)
   }
 
   return (
@@ -179,8 +132,8 @@ function Fila() {
         )}
       </div>
 
-      <button className="fila-primary-button" type="button" onClick={handleCallNext} disabled={busy}>
-        {busy ? 'Procesando...' : 'Llamar siguiente'}
+      <button className="fila-primary-button" type="button" onClick={handleCallNext}>
+        Llamar siguiente
       </button>
     </div>
   )

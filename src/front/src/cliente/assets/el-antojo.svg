@@ -1,0 +1,26 @@
+<svg width="350" height="350" viewBox="0 0 350 350" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">El Antojo</title>
+  <desc id="desc">Logo rojo de El Antojo con tomates como letras.</desc>
+  <rect width="350" height="350" fill="#c91f2b"/>
+  <g filter="url(#shadow)">
+    <text x="24" y="198" fill="#fff7f1" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="900" letter-spacing="-1">EL ANT</text>
+    <text x="276" y="198" fill="#fff7f1" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="900" letter-spacing="-1">J</text>
+  </g>
+  <g transform="translate(220 150)">
+    <ellipse cx="24" cy="27" rx="23" ry="22" fill="#e86f3f"/>
+    <path d="M7 24C9 10 19 3 31 7C20 9 12 15 7 24Z" fill="#f39862" opacity=".75"/>
+    <path d="M23 8C18 0 28 0 24 8C32 2 35 10 27 11C34 14 29 22 24 14C19 23 13 15 21 11C12 11 16 2 23 8Z" fill="#277a3f"/>
+    <path d="M24 7C25 12 25 15 24 18" stroke="#0f5d2c" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(296 150)">
+    <ellipse cx="24" cy="27" rx="23" ry="22" fill="#e86f3f"/>
+    <path d="M7 24C9 10 19 3 31 7C20 9 12 15 7 24Z" fill="#f39862" opacity=".75"/>
+    <path d="M23 8C18 0 28 0 24 8C32 2 35 10 27 11C34 14 29 22 24 14C19 23 13 15 21 11C12 11 16 2 23 8Z" fill="#277a3f"/>
+    <path d="M24 7C25 12 25 15 24 18" stroke="#0f5d2c" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <defs>
+    <filter id="shadow" x="18" y="132" width="301" height="85" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.2" flood-color="#7f111b" flood-opacity=".35"/>
+    </filter>
+  </defs>
+</svg>

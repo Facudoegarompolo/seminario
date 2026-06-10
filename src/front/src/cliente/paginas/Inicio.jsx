@@ -1,68 +1,102 @@
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import TarjetaInfo from '../componentes/TarjetaInfo'
 import BotonPrincipal from '../componentes/BotonPrincipal'
-import logoMcDonalds from '../assets/mcdonalds.webp'
-import { useNavigate } from 'react-router-dom'
+import logoElAntojo from '../assets/el-antojo.svg'
+import publicFilaService from '../../shared/services/publicFilaService'
 
 function Inicio() {
-    const navigate = useNavigate()
-    return (
+  const navigate = useNavigate()
+  const { codigoPublico = 'starbucks-uade' } = useParams()
+  const [nombreCliente, setNombreCliente] = useState('')
+  const [fila, setFila] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState(null)
 
-        <main className="pantalla">
+  useEffect(() => {
+    const fetchFila = async () => {
+      setLoading(true)
+      setError(null)
 
-            <section className="marca">
-                <img
-                    src={logoMcDonalds}
-                    alt="Logo McDonalds"
-                    className="logo-mcdonalds" />
-            </section>
+      try {
+        const data = await publicFilaService.getEstado(codigoPublico)
+        setFila(data)
+      } catch {
+        setError('No se pudo cargar la fila.')
+      } finally {
+        setLoading(false)
+      }
+    }
 
-            <section className="seccion-info">
+    fetchFila()
+  }, [codigoPublico])
 
-                <TarjetaInfo
-                    titulo="Gente En Fila"
-                    valor="4"
-                />
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    setError(null)
 
-                <TarjetaInfo
-                    titulo="Tiempo De Espera Estimado"
-                    valor="15 min"
-                />
+    try {
+      const turno = await publicFilaService.crearTurno(codigoPublico, {
+        nombreCliente: nombreCliente.trim() || undefined,
+        cantidadIntegrantes: 1,
+      })
+      navigate(`/turno/${turno.tokenPublico}`)
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo crear el turno.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
-            </section>
+  return (
+    <main className="pantalla">
+      <section className="marca">
+        <img
+          src={logoElAntojo}
+          alt={fila?.nombreLocal || 'El Antojo'}
+          className="logo-local"
+        />
+      </section>
 
-            <section className="seccion-formulario">
+      <section className="seccion-info">
+        <TarjetaInfo
+          titulo="Gente En Fila"
+          valor={loading ? '...' : String(fila?.personasEsperando ?? 0)}
+        />
 
-                <div className="contenedor-input">
+        <TarjetaInfo
+          titulo="Tiempo De Espera Estimado"
+          valor={loading ? '...' : `${fila?.tiempoEstimadoMinutos ?? 0} min`}
+        />
+      </section>
 
-                    <input
-                        type="text"
-                        placeholder="NOMBRE"
-                    />
+      <section className="seccion-formulario">
+        <div className="contenedor-input">
+          <input
+            type="text"
+            value={nombreCliente}
+            onChange={(event) => setNombreCliente(event.target.value)}
+            placeholder="NOMBRE"
+          />
 
-                    <span>×</span>
+          <button type="button" onClick={() => setNombreCliente('')}>×</button>
+        </div>
 
-                </div>
+        <p>Ingrese su nombre para anotarse en la fila</p>
 
-                <p>
-                    Ingrese su nombre para anotarse en la fila
-                </p>
+        {error && <p className="cliente-error">{error}</p>}
 
-                <div
-                    onClick={() => navigate('/estado')}
-                >
-                    <BotonPrincipal>
-                        Anotarme a la fila
-                    </BotonPrincipal>
-                </div>
+        <div onClick={handleSubmit}>
+          <BotonPrincipal>
+            {submitting ? 'Anotando...' : 'Anotarme a la fila'}
+          </BotonPrincipal>
+        </div>
+      </section>
 
-            </section>
-
-            <footer className="logo-dq">
-                DQ
-            </footer>
-
-        </main>
-    )
+      <footer className="logo-dq">DQ</footer>
+    </main>
+  )
 }
 
 export default Inicio

@@ -3,10 +3,8 @@ import queueService from '../../shared/services/queueService'
 import BackButton from '../componentes/BackButton'
 import StatsButton from '../componentes/StatsButton'
 import '../estilos/LlamarCliente.css'
-import { useNavigate } from 'react-router-dom'
 
 function LlamarCliente() {
-  const navigate = useNavigate()
   const [turno, setTurno] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -24,7 +22,7 @@ function LlamarCliente() {
         setTurno(null)
         setMessage('No hay clientes en espera en este momento')
       }
-    } catch (error) {
+    } catch {
       setMessage('No se pudo cargar el siguiente cliente.')
     } finally {
       setLoading(false)
@@ -32,7 +30,8 @@ function LlamarCliente() {
   }
 
   useEffect(() => {
-    fetchTurno()
+    const timer = window.setTimeout(fetchTurno, 0)
+    return () => window.clearTimeout(timer)
   }, [])
 
   const handleCall = async () => {
@@ -48,7 +47,7 @@ function LlamarCliente() {
       setMessage(
         'El cliente ha sido notificado en su dispositivo móvil'
       )
-    } catch (error) {
+    } catch {
       setMessage(
         'No se pudo llamar al cliente. Intenta nuevamente.'
       )
@@ -58,11 +57,13 @@ function LlamarCliente() {
   }
 
   const handleSkip = async () => {
+    if (!turno) return
+
     setBusy(true)
     try {
       await queueService.marcarNoPresentado(turno.turnoId)
       await fetchTurno()
-    } catch (error) {
+    } catch {
       setMessage('No se pudo saltar al siguiente cliente.')
     } finally {
       setBusy(false)
@@ -84,7 +85,7 @@ function LlamarCliente() {
           {loading ? '...' : turno ? `#${turno.numeroTurno}` : '—'}
         </div>
         <p className="llamar-people">
-          {turno ? `${turno.personasAdelante ?? 1} personas` : 'Sin turno disponible'}
+          {turno ? `${turno.cantidadIntegrantes ?? 1} personas` : 'Sin turno disponible'}
         </p>
         <p className="llamar-note">El cliente será notificado en su dispositivo móvil.</p>
       </div>
@@ -92,7 +93,7 @@ function LlamarCliente() {
       <button className="llamar-button primary" type="button" onClick={handleCall} disabled={busy || loading || !turno}>
         {busy ? 'Procesando...' : 'Llamar cliente'}
       </button>
-      <button className="llamar-button secondary" type="button" onClick={handleSkip} disabled={busy || loading}>
+      <button className="llamar-button secondary" type="button" onClick={handleSkip} disabled={busy || loading || !turno}>
         Saltar
       </button>
 

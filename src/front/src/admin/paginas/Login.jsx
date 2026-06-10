@@ -18,12 +18,11 @@ function Login() {
     setLoading(true)
 
     try {
-      const data = await authService.login({ email, password })
-      authService.setToken(data.token)
+      await authService.login({ email, password })
       if (remember) localStorage.setItem('dq_admin_remember', 'true')
       navigate('/admin/dashboard')
     } catch (err) {
-      setError('Credenciales incorrectas o error del servidor.')
+      setError(err.message || 'Credenciales incorrectas o error del servidor.')
     } finally {
       setLoading(false)
     }

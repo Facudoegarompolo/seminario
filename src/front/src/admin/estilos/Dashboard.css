@@ -192,6 +192,19 @@
   width: 100%;
 }
 
+.demo-notification-link {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 13px 18px;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+  width: 100%;
+}
+
 .dashboard-logo-small {
   display: flex;
   justify-content: center;

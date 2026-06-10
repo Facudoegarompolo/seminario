@@ -33,7 +33,7 @@ function Estadisticas() {
         setSummary(summaryData || DEFAULT_SUMMARY)
         setEvents(Array.isArray(eventData) ? eventData : [])
         setChartData(Array.isArray(chartDataResponse) ? chartDataResponse : [])
-      } catch (error) {
+      } catch {
         setSummary(DEFAULT_SUMMARY)
         setEvents([])
         setChartData([])

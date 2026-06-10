@@ -112,6 +112,10 @@ function Dashboard() {
         <Link to="/admin/fila" className="view-queue-button">
           Ver fila completa
         </Link>
+
+        <Link to="/admin/demo-notificacion" className="demo-notification-link">
+          Demo de notificación móvil
+        </Link>
       </section>
     </div>
   )

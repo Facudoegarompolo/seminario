@@ -4,9 +4,8 @@ import '../estilos/AdminLayout.css'
 
 function AdminLayout() {
   const token = authService.getToken()
-  const devBypass = import.meta.env.DEV
 
-  if (!token && !devBypass) {
+  if (!token) {
     return <Navigate to="/admin/login" replace />
   }
 

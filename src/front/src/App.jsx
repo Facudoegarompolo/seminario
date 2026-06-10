@@ -6,6 +6,11 @@ import Dashboard from './admin/paginas/Dashboard'
 import Fila from './admin/paginas/Fila'
 import LlamarCliente from './admin/paginas/LlamarCliente'
 import Estadisticas from './admin/paginas/Estadisticas'
+import DemoNotificacion from './admin/paginas/DemoNotificacion'
+import Inicio from './cliente/paginas/Inicio'
+import Estado from './cliente/paginas/Estado'
+
+import './cliente/estilos/global.css'
 
 function App() {
   return (
@@ -18,7 +23,10 @@ function App() {
           <Route path="fila" element={<Fila />} />
           <Route path="llamar" element={<LlamarCliente />} />
           <Route path="estadisticas" element={<Estadisticas />} />
+          <Route path="demo-notificacion" element={<DemoNotificacion />} />
         </Route>
+        <Route path="/fila/:codigoPublico" element={<Inicio />} />
+        <Route path="/turno/:tokenPublico" element={<Estado />} />
         <Route path="*" element={<Navigate to="/admin/login" replace />} />
       </Routes>
     </BrowserRouter>
