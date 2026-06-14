@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import TarjetaInfo from '../componentes/TarjetaInfo'
 import BotonPrincipal from '../componentes/BotonPrincipal'
-import logoElAntojo from '../assets/el-antojo.svg'
+import logoElAntojo from '../assets/starbucks.svg'
 import publicFilaService from '../../shared/services/publicFilaService'
 
 function Inicio() {

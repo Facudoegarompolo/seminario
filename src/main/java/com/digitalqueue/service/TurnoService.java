@@ -43,8 +43,7 @@ public class TurnoService {
 
     private static final List<EstadoTurno> ESTADOS_EN_ESPERA = List.of(
             EstadoTurno.ESPERANDO,
-            EstadoTurno.PROXIMO
-    );
+            EstadoTurno.PROXIMO);
     private static final String NOMBRE_CLIENTE_ANONIMO = "Cliente anónimo";
 
     @Transactional
@@ -62,12 +61,11 @@ public class TurnoService {
         int cantidadIntegrantes = obtenerCantidadIntegrantes(request);
         String nombreCliente = obtenerNombreCliente(request);
         Long personasAdelante = turnoRepository.countByFilaIdAndEstadoIn(fila.getId(), ESTADOS_EN_ESPERA);
-        EstimacionEspera estimacion = estimacionEsperaService.calcularEstimacion(fila, personasAdelante, cantidadIntegrantes);
+        EstimacionEspera estimacion = estimacionEsperaService.calcularEstimacion(fila, personasAdelante,
+                cantidadIntegrantes);
 
         Integer proximoNumero = obtenerProximoNumeroTurno(fila.getId());
-        EstadoTurno estadoInicial = estimacion.getQueueStatus() == QueueStatus.SIN_ESPERA
-                ? EstadoTurno.LLAMADO
-                : EstadoTurno.ESPERANDO;
+        EstadoTurno estadoInicial = EstadoTurno.ESPERANDO;
 
         LocalDateTime ahora = LocalDateTime.now();
 
@@ -113,8 +111,7 @@ public class TurnoService {
                 personasAdelante,
                 estimacion.getTiempoEstimadoMinutos(),
                 estimacion.getTiempoEstimadoMinimoMinutos(),
-                estimacion.getTiempoEstimadoMaximoMinutos()
-        );
+                estimacion.getTiempoEstimadoMaximoMinutos());
     }
 
     public TurnoEstadoResponse obtenerEstadoTurno(String tokenPublico) {
@@ -215,8 +212,7 @@ public class TurnoService {
         return turnoRepository.countByFilaIdAndEstadoInAndCreatedAtBefore(
                 turno.getFila().getId(),
                 ESTADOS_EN_ESPERA,
-                turno.getCreatedAt()
-        );
+                turno.getCreatedAt());
     }
 
     private TurnoEstadoResponse mapToTurnoEstadoResponse(Turno turno) {
@@ -227,8 +223,7 @@ public class TurnoService {
             estimacion = estimacionEsperaService.calcularEstimacion(
                     turno.getFila(),
                     personasAdelante,
-                    turno.getCantidadIntegrantes()
-            );
+                    turno.getCantidadIntegrantes());
         } else {
             estimacion = new EstimacionEspera(turno.getFila().getQueueStatus(), 0, 0, 0, 0.0);
         }
@@ -244,8 +239,7 @@ public class TurnoService {
                 personasAdelante,
                 estimacion.getTiempoEstimadoMinutos(),
                 estimacion.getTiempoEstimadoMinimoMinutos(),
-                estimacion.getTiempoEstimadoMaximoMinutos()
-        );
+                estimacion.getTiempoEstimadoMaximoMinutos());
     }
 
     private TurnoAdminResponse mapToTurnoAdminResponse(Turno turno) {
@@ -263,8 +257,7 @@ public class TurnoService {
                 turno.getErrorPrediccionMinutos(),
                 turno.getCreatedAt(),
                 turno.getCalledAt(),
-                turno.getCompletedAt()
-        );
+                turno.getCompletedAt());
     }
 
     private int obtenerCantidadIntegrantes(CrearTurnoRequest request) {
@@ -298,7 +291,8 @@ public class TurnoService {
         }
 
         int tiempoReal = Math.toIntExact(Duration.between(turno.getCreatedAt(), horaLlamado).toMinutes());
-        int estimadoInformado = turno.getTiempoEstimadoInformadoMinutos() == null ? 0 : turno.getTiempoEstimadoInformadoMinutos();
+        int estimadoInformado = turno.getTiempoEstimadoInformadoMinutos() == null ? 0
+                : turno.getTiempoEstimadoInformadoMinutos();
 
         turno.setTiempoRealEsperaMinutos(tiempoReal);
         turno.setErrorPrediccionMinutos(Math.abs(tiempoReal - estimadoInformado));

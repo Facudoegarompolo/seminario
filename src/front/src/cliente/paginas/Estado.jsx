@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import logoElAntojo from '../assets/el-antojo.svg'
+import logoElAntojo from '../assets/starbucks.svg'
 import BarraProgreso from '../componentes/BarraProgreso'
 import TarjetaEstado from '../componentes/TarjetaEstado'
 import publicTurnoService from '../../shared/services/publicTurnoService'
@@ -11,7 +11,43 @@ const calcularProgreso = (estado, personasAdelante) => {
   if (personasAdelante <= 5) return 45
   return 20
 }
+const CONFIG_ESTADO = {
+  ESPERANDO: {
+    icono: '🔔',
+    titulo: 'Tu turno se acerca',
+    mensaje: 'Faltan varias personas antes que vos.'
+  },
 
+  PROXIMO: {
+    icono: '🔔',
+    titulo: '¡Estás próximo!',
+    mensaje: 'Falta muy poco para tu turno.'
+  },
+
+  LLAMADO: {
+    icono: '🔔',
+    titulo: '¡Es tu turno!',
+    mensaje: 'Presentate en el mostrador para ser atendido.'
+  },
+
+  FINALIZADO: {
+    icono: '✅',
+    titulo: 'Gracias por su tiempo',
+    mensaje: 'Tu atención fue completada con éxito.'
+  },
+
+  NO_PRESENTADO: {
+    icono: '❌',
+    titulo: 'Perdiste tu lugar',
+    mensaje: 'No te presentaste a tiempo.'
+  },
+
+  CANCELADO: {
+    icono: '❌',
+    titulo: 'Turno cancelado',
+    mensaje: 'Podés volver a anotarte cuando quieras.'
+  }
+}
 function Estado() {
   const { tokenPublico } = useParams()
   const [turno, setTurno] = useState(null)
@@ -37,11 +73,45 @@ function Estado() {
     const interval = window.setInterval(fetchTurno, 15000)
     return () => window.clearInterval(interval)
   }, [tokenPublico])
+  const calcularHoraEstimada = () => {
+    const minutos = turno?.tiempoEstimadoMinutos ?? 0
 
+    const fecha = new Date()
+    fecha.setMinutes(fecha.getMinutes() + minutos)
+
+    return fecha.toLocaleTimeString('es-AR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
   const personasAdelante = turno?.personasAdelante ?? 0
   const estado = turno?.estado ?? 'ESPERANDO'
+  const estadoConfig =
+    CONFIG_ESTADO[estado] || CONFIG_ESTADO.ESPERANDO
   const progreso = calcularProgreso(estado, personasAdelante)
+  const nombreCliente =
+    turno?.nombreCliente
+      ? turno.nombreCliente.charAt(0).toUpperCase() +
+      turno.nombreCliente.slice(1)
+      : 'Cliente'
+  const handleCancelarTurno = async () => {
+    const confirmar = window.confirm(
+      '¿Estás seguro de que querés salir de la fila?'
+    )
 
+    if (!confirmar) return
+
+    try {
+      await publicTurnoService.cancelar(tokenPublico)
+
+      alert('Tu turno fue cancelado.')
+
+      window.location.href = '/fila/starbucks-uade'
+    } catch {
+      alert('No se pudo cancelar el turno.')
+    }
+  }
+  <p>Estado backend: {estado}</p>
   return (
     <main className="pantalla">
       <section className="marca marca-estado">
@@ -52,12 +122,32 @@ function Estado() {
         />
       </section>
 
+      <section className="estado-banner">
+        <div className="estado-icono">
+          {estadoConfig.icono}
+        </div>
+
+        <h3 className="estado-titulo">
+          {estadoConfig.titulo}
+        </h3>
+
+        <p className="estado-mensaje">
+          {estadoConfig.mensaje}
+        </p>
+      </section>
+      <h2 className="cliente-saludo">
+        ¡Hola, {nombreCliente}!
+      </h2>
       <BarraProgreso porcentaje={loading ? 15 : progreso} />
 
       <section className="grilla-estado">
         <TarjetaEstado
-          titulo="Hora En Que Debe Presentarse"
-          valor={estado === 'LLAMADO' ? 'Ahora' : 'Próximamente'}
+          titulo="Hora estimada"
+          valor={
+            estado === 'LLAMADO'
+              ? 'Ahora'
+              : calcularHoraEstimada()
+          }
         />
 
         <TarjetaEstado
@@ -66,7 +156,7 @@ function Estado() {
         />
 
         <TarjetaEstado
-          titulo="Mi Número"
+          titulo="Turno"
           valor={loading ? '...' : String(turno?.numeroTurno ?? '-')}
         />
 
@@ -93,6 +183,12 @@ function Estado() {
           <span></span>
         </label>
       </section>
+      <button
+        className="boton-salir-fila"
+        onClick={handleCancelarTurno}
+      >
+        Salir de la fila
+      </button>
 
       <footer className="logo-dq">DQ</footer>
     </main>
