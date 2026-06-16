@@ -79,13 +79,15 @@ public class GlobalExceptionHandler {
         public ResponseEntity<ErrorResponse> handleGeneralException(
                         Exception ex,
                         HttpServletRequest request) {
+                ex.printStackTrace();
 
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ErrorResponse(
-                                                LocalDateTime.now(),
-                                                500,
-                                                "ERROR",
-                                                ex.getClass().getName() + " -> " + ex.getMessage(),
-                                                request.getRequestURI()));
+                ErrorResponse error = new ErrorResponse(
+                                LocalDateTime.now(),
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+                                "Error interno del servidor",
+                                request.getRequestURI());
+
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
 }
