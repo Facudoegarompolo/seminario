@@ -133,15 +133,13 @@ public class PushNotificationService {
             PushService pushService,
             PushSubscription subscription,
             NotificacionPush notificacion,
-            Turno turno
-    ) {
+            Turno turno) {
         try {
             Notification notification = new Notification(
                     subscription.getEndpoint(),
                     subscription.getP256dh(),
                     subscription.getAuth(),
-                    crearPayload(notificacion, turno)
-            );
+                    crearPayload(notificacion, turno));
 
             HttpResponse response = pushService.send(notification);
             int statusCode = response.getStatusLine().getStatusCode();
@@ -175,12 +173,14 @@ public class PushNotificationService {
     }
 
     private void marcarEnviada(NotificacionPush notificacion) {
+        System.out.println("PUSH ENVIADA");
         notificacion.setEstado(EstadoNotificacion.ENVIADA);
         notificacion.setSentAt(LocalDateTime.now());
         notificacion.setErrorEnvio(null);
     }
 
     private void marcarError(NotificacionPush notificacion, String error) {
+        System.out.println("PUSH ERROR: " + error);
         notificacion.setEstado(EstadoNotificacion.ERROR);
         notificacion.setErrorEnvio(error);
     }
@@ -216,4 +216,5 @@ public class PushNotificationService {
             case POSICION_ACTUALIZADA -> "Actualizamos tu posicion en la fila.";
         };
     }
+
 }
