@@ -131,11 +131,16 @@ function Estado() {
 
       alert('Notificaciones activadas.')
     } catch (error) {
-      console.error(error)
-      alert('No se pudieron activar las notificaciones.')
+      console.error('ERROR PUSH:', error)
+
+      alert(
+        JSON.stringify({
+          name: error?.name,
+          message: error?.message,
+        })
+      )
     }
   }
-
 
 
   const personasAdelante = turno?.personasAdelante ?? 0
