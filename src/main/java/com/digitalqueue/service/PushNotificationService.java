@@ -59,6 +59,7 @@ public class PushNotificationService {
     }
 
     public String obtenerClavePublica() {
+        System.out.println("VAPID PUBLIC KEY: " + vapidPublicKey);
         return vapidPublicKey;
     }
 
