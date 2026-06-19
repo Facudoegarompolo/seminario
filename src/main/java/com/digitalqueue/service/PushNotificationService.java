@@ -148,8 +148,11 @@ public class PushNotificationService {
                     subscription.getP256dh(),
                     subscription.getAuth(),
                     crearPayload(notificacion, turno));
-
             HttpResponse response = pushService.send(notification);
+            System.out.println(
+                    "PUSH RESPONSE: " +
+                            response.getStatusLine());
+
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode >= 200 && statusCode < 300) {
                 marcarEnviada(notificacion);
