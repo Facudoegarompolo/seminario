@@ -63,6 +63,13 @@ public class PushNotificationService {
         return vapidPublicKey;
     }
 
+    @PostConstruct
+    public void debugVapid() {
+        System.out.println("PUBLIC KEY = " + vapidPublicKey);
+        System.out.println("PRIVATE KEY = " + vapidPrivateKey);
+        System.out.println("SUBJECT = " + vapidSubject);
+    }
+
     @Transactional
     public void registrarSuscripcion(String tokenPublico, PushSubscriptionRequest request) {
         Turno turno = turnoRepository.findByTokenPublico(tokenPublico)
