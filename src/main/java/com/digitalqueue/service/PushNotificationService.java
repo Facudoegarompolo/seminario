@@ -147,6 +147,7 @@ public class PushNotificationService {
             System.out.println("ENDPOINT: " + subscription.getEndpoint());
             System.out.println("P256DH: " + subscription.getP256dh());
             System.out.println("AUTH: " + subscription.getAuth());
+            System.out.println("PUBLIC KEY USADA: " + vapidPublicKey);
             Notification notification = new Notification(
                     subscription.getEndpoint(),
                     subscription.getP256dh(),
