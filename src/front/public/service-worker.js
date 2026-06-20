@@ -9,17 +9,16 @@ self.addEventListener('push', (event) => {
             icon: '/favicon.svg',
             badge: '/favicon.svg',
 
-            // Hace que la notificación sea más visible y no se cierre tan rápido
+            // Intenta que quede visible hasta que el usuario interactúe
             requireInteraction: true,
 
             // Intenta vibrar en Android
             vibrate: [300, 100, 300, 100, 300],
 
-            // Si llega otra del mismo tipo, vuelve a avisar
+            // Si llega otra notificación del mismo turno, vuelve a avisar
             tag: `turno-${data.turnoId}`,
             renotify: true,
 
-            // Botones visibles en la notificación
             actions: [
                 {
                     action: 'ver-turno',
@@ -31,5 +30,17 @@ self.addEventListener('push', (event) => {
                 tokenPublico: data.tokenPublico,
             },
         }),
+    )
+})
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close()
+
+    const tokenPublico = event.notification.data?.tokenPublico
+
+    if (!tokenPublico) return
+
+    event.waitUntil(
+        clients.openWindow(`/estado/${tokenPublico}`)
     )
 })
