@@ -100,7 +100,43 @@ function Estado() {
   }
   const activarNotificaciones = async () => {
     try {
-      const permiso = await Notification.requestPermission()
+      const esIOS =
+        /iphone|ipad|ipod/i.test(window.navigator.userAgent)
+
+      const esPWA =
+        window.navigator.standalone === true ||
+        window.matchMedia('(display-mode: standalone)').matches
+
+      if (!('Notification' in window)) {
+        if (esIOS && !esPWA) {
+          alert(
+            'En iPhone, para recibir notificaciones, primero agregá esta web a la pantalla de inicio desde Safari y abrila desde el ícono.'
+          )
+          return
+        }
+
+        alert('Este navegador no soporta notificaciones web.')
+        return
+      }
+
+      if (!('serviceWorker' in navigator)) {
+        alert('Este navegador no soporta service workers.')
+        return
+      }
+
+      if (!('PushManager' in window)) {
+        if (esIOS && !esPWA) {
+          alert(
+            'En iPhone, las notificaciones funcionan instalando la web en la pantalla de inicio.'
+          )
+          return
+        }
+
+        alert('Este navegador no soporta notificaciones push.')
+        return
+      }
+
+      const permiso = await window.Notification.requestPermission()
 
       if (permiso !== 'granted') {
         alert('Debés permitir las notificaciones.')
@@ -108,14 +144,16 @@ function Estado() {
       }
 
       const registration =
-        await navigator.serviceWorker.register(
-          '/service-worker.js'
-        )
+        await navigator.serviceWorker.register('/service-worker.js')
 
       const publicKey =
         await publicTurnoService.getPushPublicKey()
 
+      const existingSubscription =
+        await registration.pushManager.getSubscription()
+
       const subscription =
+        existingSubscription ||
         await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey:
@@ -141,7 +179,6 @@ function Estado() {
       )
     }
   }
-
 
   const personasAdelante = turno?.personasAdelante ?? 0
   const estado = turno?.estado ?? 'ESPERANDO'
