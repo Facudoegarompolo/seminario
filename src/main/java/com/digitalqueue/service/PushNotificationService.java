@@ -143,6 +143,9 @@ public class PushNotificationService {
             NotificacionPush notificacion,
             Turno turno) {
         try {
+            System.out.println("ENDPOINT: " + subscription.getEndpoint());
+            System.out.println("P256DH: " + subscription.getP256dh());
+            System.out.println("AUTH: " + subscription.getAuth());
             Notification notification = new Notification(
                     subscription.getEndpoint(),
                     subscription.getP256dh(),
