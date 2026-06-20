@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import org.apache.http.util.EntityUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -152,9 +153,16 @@ public class PushNotificationService {
                     subscription.getAuth(),
                     crearPayload(notificacion, turno));
             HttpResponse response = pushService.send(notification);
+
             System.out.println(
                     "PUSH RESPONSE: " +
                             response.getStatusLine());
+
+            if (response.getEntity() != null) {
+                System.out.println(
+                        "PUSH BODY: " +
+                                EntityUtils.toString(response.getEntity()));
+            }
 
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode >= 200 && statusCode < 300) {
