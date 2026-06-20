@@ -135,16 +135,35 @@ public class TurnoService {
                 .orElseThrow(() -> new OperacionInvalidaException("No hay turnos esperando"));
 
         LocalDateTime ahora = LocalDateTime.now();
+
         turno.setEstado(EstadoTurno.LLAMADO);
         turno.setCalledAt(ahora);
+
         actualizarMetricasDeEspera(turno, ahora);
+
         if (esConsumoEnLocal(turno.getFila().getLocal())) {
-            sumarPersonasActuales(turno.getFila().getLocal(), turno.getCantidadIntegrantes());
+            sumarPersonasActuales(
+                    turno.getFila().getLocal(),
+                    turno.getCantidadIntegrantes());
         }
 
         Turno turnoGuardado = turnoRepository.save(turno);
+
         metricasFilaService.registrarLlamado(turnoGuardado);
-        pushNotificationService.registrarNotificacionPendiente(turnoGuardado, TipoNotificacion.TURNO_LLAMADO);
+
+        // Notificación al turno que acaba de ser llamado
+        pushNotificationService.registrarNotificacionPendiente(
+                turnoGuardado,
+                TipoNotificacion.TURNO_LLAMADO);
+
+        // Notificación al próximo turno en la fila
+        turnoRepository
+                .findFirstByFilaIdAndEstadoInOrderByCreatedAtAsc(
+                        filaId,
+                        ESTADOS_EN_ESPERA)
+                .ifPresent(turnoProximo -> pushNotificationService.registrarNotificacionPendiente(
+                        turnoProximo,
+                        TipoNotificacion.TURNO_PROXIMO));
 
         return mapToTurnoEstadoResponse(turnoGuardado);
     }
