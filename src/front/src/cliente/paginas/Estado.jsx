@@ -90,8 +90,6 @@ function Estado() {
   const [mostrarGuiaInstalacion, setMostrarGuiaInstalacion] = useState(false)
 
   useEffect(() => {
-    window.localStorage.setItem('dq_turno_token', tokenPublico)
-
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
 
     navigator.serviceWorker.getRegistration()
@@ -392,7 +390,7 @@ function Estado() {
             </ol>
 
             <p className="guia-instalacion-nota">
-              Tu turno queda guardado y se abre automáticamente desde el ícono.
+              El ícono abrirá directamente este turno, sin volver a inscribirte.
             </p>
             <button
               type="button"
