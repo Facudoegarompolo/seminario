@@ -9,6 +9,7 @@ import Estadisticas from './admin/paginas/Estadisticas'
 import DemoNotificacion from './admin/paginas/DemoNotificacion'
 import Inicio from './cliente/paginas/Inicio'
 import Estado from './cliente/paginas/Estado'
+import PortalCliente from './cliente/paginas/PortalCliente'
 
 import './cliente/estilos/global.css'
 
@@ -16,6 +17,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<PortalCliente />} />
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
@@ -27,7 +29,7 @@ function App() {
         </Route>
         <Route path="/fila/:codigoPublico" element={<Inicio />} />
         <Route path="/turno/:tokenPublico" element={<Estado />} />
-        <Route path="*" element={<Navigate to="/admin/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

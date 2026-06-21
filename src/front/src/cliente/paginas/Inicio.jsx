@@ -4,6 +4,7 @@ import TarjetaInfo from '../componentes/TarjetaInfo'
 import BotonPrincipal from '../componentes/BotonPrincipal'
 import logoElAntojo from '../assets/starbucks.svg'
 import publicFilaService from '../../shared/services/publicFilaService'
+import { guardarUltimoLocal } from '../utils/ultimoLocal'
 
 function Inicio() {
   const navigate = useNavigate()
@@ -22,6 +23,7 @@ function Inicio() {
       try {
         const data = await publicFilaService.getEstado(codigoPublico)
         setFila(data)
+        guardarUltimoLocal(codigoPublico, data.nombreLocal)
       } catch {
         setError('No se pudo cargar la fila.')
       } finally {

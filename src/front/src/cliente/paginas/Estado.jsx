@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import logoElAntojo from '../assets/starbucks.svg'
 import BarraProgreso from '../componentes/BarraProgreso'
 import TarjetaEstado from '../componentes/TarjetaEstado'
 import publicTurnoService from '../../shared/services/publicTurnoService'
+import { guardarUltimoLocal } from '../utils/ultimoLocal'
 const calcularProgreso = (estado, personasAdelante) => {
   if (estado === 'LLAMADO' || personasAdelante === 0) return 100
   if (personasAdelante <= 2) return 75
@@ -80,6 +81,7 @@ const esAplicacionInstalada = () =>
 
 function Estado() {
   const { tokenPublico } = useParams()
+  const navigate = useNavigate()
   const [turno, setTurno] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -106,6 +108,7 @@ function Estado() {
       try {
         const data = await publicTurnoService.getEstado(tokenPublico)
         setTurno(data)
+        guardarUltimoLocal(data.codigoPublico, data.nombreLocal)
       } catch {
         setError('No se pudo cargar tu turno.')
       } finally {
@@ -224,6 +227,12 @@ function Estado() {
     CONFIG_ESTADO[estado] || CONFIG_ESTADO.ESPERANDO
 
   const progreso = calcularProgreso(estado, personasAdelante)
+  const puedeCancelar = estado === 'ESPERANDO' || estado === 'PROXIMO'
+  const turnoTerminado = [
+    'FINALIZADO',
+    'NO_PRESENTADO',
+    'CANCELADO',
+  ].includes(estado)
   const nombreCliente =
     turno?.nombreCliente
       ? turno.nombreCliente.charAt(0).toUpperCase() +
@@ -237,14 +246,42 @@ function Estado() {
     if (!confirmar) return
 
     try {
-      await publicTurnoService.cancelar(tokenPublico)
-
-      alert('Tu turno fue cancelado.')
-
-      window.location.href = '/fila/starbucks-uade'
+      const turnoCancelado = await publicTurnoService.cancelar(tokenPublico)
+      setTurno(turnoCancelado)
+      guardarUltimoLocal(
+        turnoCancelado.codigoPublico,
+        turnoCancelado.nombreLocal,
+      )
     } catch {
       alert('No se pudo cancelar el turno.')
     }
+  }
+
+  const volverAlRestaurante = () => {
+    if (turno?.codigoPublico) {
+      navigate(`/fila/${turno.codigoPublico}`)
+      return
+    }
+    navigate('/')
+  }
+
+  if (!loading && error && !turno) {
+    return (
+      <main className="pantalla portal-cliente">
+        <span className="portal-cliente-etiqueta">Digital Queue</span>
+        <h1>Este turno ya no está disponible</h1>
+        <p className="portal-cliente-descripcion">
+          Podés escanear el QR del restaurante para ingresar a una nueva fila.
+        </p>
+        <button
+          type="button"
+          className="portal-cliente-accion"
+          onClick={() => navigate('/')}
+        >
+          Ir al inicio
+        </button>
+      </main>
+    )
   }
 
   return (
@@ -303,7 +340,7 @@ function Estado() {
 
       {error && <p className="cliente-error">{error}</p>}
 
-      <section className="notificacion">
+      {!turnoTerminado && <section className="notificacion">
         <div>
           <h3>Notificación de turno</h3>
           <p>
@@ -331,13 +368,32 @@ function Estado() {
             <span></span>
           </label>
         )}
-      </section>
-      <button
-        className="boton-salir-fila"
-        onClick={handleCancelarTurno}
-      >
-        Salir de la fila
-      </button>
+      </section>}
+
+      {puedeCancelar && (
+        <button
+          className="boton-salir-fila"
+          onClick={handleCancelarTurno}
+        >
+          Salir de la fila
+        </button>
+      )}
+
+      {turnoTerminado && (
+        <section className="acciones-turno-terminado">
+          <h3>¿Qué querés hacer ahora?</h3>
+          <button type="button" onClick={volverAlRestaurante}>
+            Volver a {turno?.nombreLocal || 'este restaurante'}
+          </button>
+          <button
+            type="button"
+            className="accion-secundaria"
+            onClick={() => navigate('/')}
+          >
+            Ir al inicio de Digital Queue
+          </button>
+        </section>
+      )}
 
       <footer className="logo-dq">DQ</footer>
 

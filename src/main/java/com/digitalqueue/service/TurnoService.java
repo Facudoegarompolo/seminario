@@ -236,6 +236,10 @@ public class TurnoService {
 
     private TurnoEstadoResponse mapToTurnoEstadoResponse(Turno turno) {
         Long personasAdelante = calcularPersonasAdelante(turno);
+        String codigoPublico = puntoAccesoRepository
+                .findFirstByFilaIdAndActivoTrueOrderByIdAsc(turno.getFila().getId())
+                .map(PuntoAcceso::getCodigoPublico)
+                .orElse(null);
         EstimacionEspera estimacion;
 
         if (turno.getEstado() == EstadoTurno.ESPERANDO || turno.getEstado() == EstadoTurno.PROXIMO) {
@@ -250,6 +254,8 @@ public class TurnoService {
         return new TurnoEstadoResponse(
                 turno.getId(),
                 turno.getFila().getId(),
+                codigoPublico,
+                turno.getFila().getLocal().getNombre(),
                 turno.getNumeroTurno(),
                 turno.getEstado(),
                 obtenerNombreCliente(turno),

@@ -622,3 +622,110 @@ body,
         align-items: center;
     }
 }
+
+.portal-cliente {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.portal-cliente-logo {
+    width: 190px;
+    max-width: 70%;
+    margin-bottom: 28px;
+    border-radius: 18px;
+}
+
+.portal-cliente-etiqueta {
+    margin-bottom: 10px;
+    color: #006b45;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.portal-cliente h1 {
+    margin-bottom: 12px;
+    color: #1f2937;
+    font-size: 28px;
+}
+
+.portal-cliente-descripcion {
+    max-width: 300px;
+    margin-bottom: 28px;
+    color: #606875;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.portal-cliente-accion {
+    display: inline-flex;
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: 10px;
+    background: #006b45;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.portal-cliente-ayuda {
+    width: 100%;
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #f0f0f2;
+    color: #4b5563;
+}
+
+.portal-cliente-ayuda strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #1f2937;
+    font-size: 13px;
+}
+
+.portal-cliente-ayuda p {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.acciones-turno-terminado {
+    width: 100%;
+    margin-top: 28px;
+    padding: 18px;
+    border-radius: 14px;
+    background: #f7f7f8;
+    text-align: center;
+}
+
+.acciones-turno-terminado h3 {
+    margin-bottom: 14px;
+    color: #1f2937;
+    font-size: 14px;
+}
+
+.acciones-turno-terminado button {
+    width: 100%;
+    padding: 12px;
+    border: 0;
+    border-radius: 9px;
+    background: #006b45;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.acciones-turno-terminado .accion-secundaria {
+    margin-top: 8px;
+    background: #e5e7eb;
+    color: #374151;
+}

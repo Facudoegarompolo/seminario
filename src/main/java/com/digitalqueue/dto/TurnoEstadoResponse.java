@@ -14,6 +14,8 @@ public class TurnoEstadoResponse {
 
     private Long turnoId;
     private Long filaId;
+    private String codigoPublico;
+    private String nombreLocal;
     private Integer numeroTurno;
     private EstadoTurno estado;
     private String nombreCliente;

@@ -12,5 +12,7 @@ public interface PuntoAccesoRepository extends JpaRepository<PuntoAcceso, Long> 
 
     Optional<PuntoAcceso> findByCodigoPublicoAndActivoTrue(String codigoPublico);
 
+    Optional<PuntoAcceso> findFirstByFilaIdAndActivoTrueOrderByIdAsc(Long filaId);
+
     List<PuntoAcceso> findByFilaId(Long filaId);
 }
