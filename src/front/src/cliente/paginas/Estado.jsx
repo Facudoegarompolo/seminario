@@ -61,12 +61,44 @@ const urlBase64ToUint8Array = (base64String) => {
     [...rawData].map((char) => char.charCodeAt(0)),
   )
 }
+
+const sonClavesIguales = (primera, segunda) => {
+  if (!primera || primera.byteLength !== segunda.byteLength) return false
+
+  const bytesPrimera = new Uint8Array(primera)
+  return bytesPrimera.every((byte, index) => byte === segunda[index])
+}
+
+const esDispositivoIOS = () =>
+  /iphone|ipad|ipod/i.test(window.navigator.userAgent) ||
+  (window.navigator.platform === 'MacIntel' &&
+    window.navigator.maxTouchPoints > 1)
+
+const esAplicacionInstalada = () =>
+  window.navigator.standalone === true ||
+  window.matchMedia('(display-mode: standalone)').matches
+
 function Estado() {
   const { tokenPublico } = useParams()
   const [turno, setTurno] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [notificacionesActivas, setNotificacionesActivas] = useState(false)
+  const [requiereInstalacion] = useState(
+    () => esDispositivoIOS() && !esAplicacionInstalada(),
+  )
+  const [mostrarGuiaInstalacion, setMostrarGuiaInstalacion] = useState(false)
+
+  useEffect(() => {
+    window.localStorage.setItem('dq_turno_token', tokenPublico)
+
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+
+    navigator.serviceWorker.getRegistration()
+      .then((registration) => registration?.pushManager.getSubscription())
+      .then((subscription) => setNotificacionesActivas(Boolean(subscription)))
+      .catch(() => setNotificacionesActivas(false))
+  }, [tokenPublico])
 
   useEffect(() => {
     const fetchTurno = async () => {
@@ -100,21 +132,20 @@ function Estado() {
   }
   const activarNotificaciones = async () => {
     try {
-      const esIOS =
-        /iphone|ipad|ipod/i.test(window.navigator.userAgent)
+      const esIOS = esDispositivoIOS()
+      const esPWA = esAplicacionInstalada()
 
-      const esPWA =
-        window.navigator.standalone === true ||
-        window.matchMedia('(display-mode: standalone)').matches
+      if (!window.isSecureContext) {
+        alert('Las notificaciones requieren abrir la web mediante HTTPS.')
+        return
+      }
+
+      if (esIOS && !esPWA) {
+        setMostrarGuiaInstalacion(true)
+        return
+      }
 
       if (!('Notification' in window)) {
-        if (esIOS && !esPWA) {
-          alert(
-            'En iPhone, para recibir notificaciones, primero agregá esta web a la pantalla de inicio desde Safari y abrila desde el ícono.'
-          )
-          return
-        }
-
         alert('Este navegador no soporta notificaciones web.')
         return
       }
@@ -125,13 +156,6 @@ function Estado() {
       }
 
       if (!('PushManager' in window)) {
-        if (esIOS && !esPWA) {
-          alert(
-            'En iPhone, las notificaciones funcionan instalando la web en la pantalla de inicio.'
-          )
-          return
-        }
-
         alert('Este navegador no soporta notificaciones push.')
         return
       }
@@ -143,21 +167,37 @@ function Estado() {
         return
       }
 
-      const registration =
-        await navigator.serviceWorker.register('/service-worker.js')
+      await navigator.serviceWorker.register('/service-worker.js')
+      const registration = await navigator.serviceWorker.ready
 
       const publicKey =
         await publicTurnoService.getPushPublicKey()
 
-      const existingSubscription =
+      if (!publicKey) {
+        throw new Error('El servidor no tiene configurada la clave publica VAPID.')
+      }
+
+      const applicationServerKey = urlBase64ToUint8Array(publicKey)
+
+      let existingSubscription =
         await registration.pushManager.getSubscription()
+
+      if (
+        existingSubscription &&
+        !sonClavesIguales(
+          existingSubscription.options?.applicationServerKey,
+          applicationServerKey,
+        )
+      ) {
+        await existingSubscription.unsubscribe()
+        existingSubscription = null
+      }
 
       const subscription =
         existingSubscription ||
         await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey:
-            urlBase64ToUint8Array(publicKey),
+          applicationServerKey,
         })
 
       await publicTurnoService.registrarPushSubscription(
@@ -275,15 +315,24 @@ function Estado() {
           </p>
         </div>
 
-        <label className="switch">
-
-          <input
-            type="checkbox"
-            checked={notificacionesActivas}
-            onChange={activarNotificaciones}
-          />
-          <span></span>
-        </label>
+        {requiereInstalacion ? (
+          <button
+            type="button"
+            className="boton-activar-avisos"
+            onClick={() => setMostrarGuiaInstalacion(true)}
+          >
+            Activar avisos
+          </button>
+        ) : (
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={notificacionesActivas}
+              onChange={activarNotificaciones}
+            />
+            <span></span>
+          </label>
+        )}
       </section>
       <button
         className="boton-salir-fila"
@@ -293,6 +342,68 @@ function Estado() {
       </button>
 
       <footer className="logo-dq">DQ</footer>
+
+      {mostrarGuiaInstalacion && (
+        <div
+          className="guia-instalacion-fondo"
+          role="presentation"
+          onClick={() => setMostrarGuiaInstalacion(false)}
+        >
+          <section
+            className="guia-instalacion"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-guia-instalacion"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="guia-instalacion-cerrar"
+              aria-label="Cerrar instrucciones"
+              onClick={() => setMostrarGuiaInstalacion(false)}
+            >
+              ×
+            </button>
+
+            <span className="guia-instalacion-etiqueta">iPhone y iPad</span>
+            <h2 id="titulo-guia-instalacion">Recibí el aviso con Safari cerrado</h2>
+            <p className="guia-instalacion-intro">
+              No necesitás App Store ni una cuenta. Agregá Digital Queue a tu
+              pantalla de inicio una sola vez.
+            </p>
+
+            <ol className="guia-instalacion-pasos">
+              <li>
+                <span>1</span>
+                <p>Tocá <strong>Compartir</strong> en la barra de Safari.</p>
+              </li>
+              <li>
+                <span>2</span>
+                <p>Elegí <strong>Agregar a inicio</strong> y confirmá.</p>
+              </li>
+              <li>
+                <span>3</span>
+                <p>Abrí <strong>Digital Queue</strong> desde el nuevo ícono.</p>
+              </li>
+              <li>
+                <span>4</span>
+                <p>Activá los avisos cuando vuelvas a ver tu turno.</p>
+              </li>
+            </ol>
+
+            <p className="guia-instalacion-nota">
+              Tu turno queda guardado y se abre automáticamente desde el ícono.
+            </p>
+            <button
+              type="button"
+              className="guia-instalacion-listo"
+              onClick={() => setMostrarGuiaInstalacion(false)}
+            >
+              Entendido
+            </button>
+          </section>
+        </div>
+      )}
     </main>
   )
 }

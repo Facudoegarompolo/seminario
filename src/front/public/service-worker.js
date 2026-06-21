@@ -1,7 +1,15 @@
 self.addEventListener('push', (event) => {
     if (!event.data) return
 
-    const data = event.data.json()
+    let data
+    try {
+        data = event.data.json()
+    } catch {
+        data = {
+            title: 'Digital Queue',
+            body: event.data.text(),
+        }
+    }
 
     event.waitUntil(
         self.registration.showNotification(data.title, {
@@ -9,13 +17,8 @@ self.addEventListener('push', (event) => {
             icon: '/favicon.svg',
             badge: '/favicon.svg',
 
-            // Intenta que quede visible hasta que el usuario interactúe
             requireInteraction: true,
-
-            // Intenta vibrar en Android
             vibrate: [300, 100, 300, 100, 300],
-
-            // Si llega otra notificación del mismo turno, vuelve a avisar
             tag: `turno-${data.turnoId}`,
             renotify: true,
 
@@ -40,7 +43,17 @@ self.addEventListener('notificationclick', (event) => {
 
     if (!tokenPublico) return
 
+    const urlTurno = `/turno/${tokenPublico}`
+
     event.waitUntil(
-        clients.openWindow(`/estado/${tokenPublico}`)
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then(async (windowClients) => {
+                const clienteAbierto = windowClients.find(
+                    (client) => new URL(client.url).pathname === urlTurno
+                )
+
+                if (clienteAbierto) return clienteAbierto.focus()
+                return self.clients.openWindow(urlTurno)
+            })
     )
 })

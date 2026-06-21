@@ -12,9 +12,13 @@ import com.digitalqueue.repository.PushSubscriptionRepository;
 import com.digitalqueue.repository.TurnoRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import nl.martijndwars.webpush.Encoding;
 import nl.martijndwars.webpush.Notification;
 import nl.martijndwars.webpush.PushService;
+import nl.martijndwars.webpush.Urgency;
 import org.apache.http.HttpResponse;
+import org.apache.http.util.EntityUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jose4j.lang.JoseException;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,11 +36,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import org.apache.http.util.EntityUtils;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PushNotificationService {
+
+    private static final int PUSH_TTL_SECONDS = 5 * 60;
 
     private final TurnoRepository turnoRepository;
     private final PushSubscriptionRepository pushSubscriptionRepository;
@@ -60,15 +66,7 @@ public class PushNotificationService {
     }
 
     public String obtenerClavePublica() {
-        System.out.println("VAPID PUBLIC KEY: " + vapidPublicKey);
         return vapidPublicKey;
-    }
-
-    @PostConstruct
-    public void debugVapid() {
-        System.out.println("PUBLIC KEY = " + vapidPublicKey);
-        System.out.println("PRIVATE KEY = " + vapidPrivateKey);
-        System.out.println("SUBJECT = " + vapidSubject);
     }
 
     @Transactional
@@ -144,26 +142,21 @@ public class PushNotificationService {
             NotificacionPush notificacion,
             Turno turno) {
         try {
-            System.out.println("ENDPOINT: " + subscription.getEndpoint());
-            System.out.println("P256DH: " + subscription.getP256dh());
-            System.out.println("AUTH: " + subscription.getAuth());
-            System.out.println("PUBLIC KEY USADA: " + vapidPublicKey);
-            Notification notification = new Notification(
-                    subscription.getEndpoint(),
-                    subscription.getP256dh(),
-                    subscription.getAuth(),
-                    crearPayload(notificacion, turno));
-            HttpResponse response = pushService.send(notification);
+            Notification notification = Notification.builder()
+                    .endpoint(subscription.getEndpoint())
+                    .userPublicKey(subscription.getP256dh())
+                    .userAuth(subscription.getAuth())
+                    .payload(crearPayload(notificacion, turno))
+                    .ttl(PUSH_TTL_SECONDS)
+                    .urgency(Urgency.HIGH)
+                    .build();
 
-            System.out.println(
-                    "PUSH RESPONSE: " +
-                            response.getStatusLine());
-
-            if (response.getEntity() != null) {
-                System.out.println(
-                        "PUSH BODY: " +
-                                EntityUtils.toString(response.getEntity()));
-            }
+            // Safari y APNs requieren el cifrado estandar RFC 8188. En web-push
+            // 5.1.1, send(notification) usa el formato legado aesgcm.
+            HttpResponse response = pushService.send(notification, Encoding.AES128GCM);
+            String responseBody = response.getEntity() == null
+                    ? ""
+                    : EntityUtils.toString(response.getEntity());
 
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode >= 200 && statusCode < 300) {
@@ -174,7 +167,8 @@ public class PushNotificationService {
             if (statusCode == 404 || statusCode == 410) {
                 subscription.setActivo(false);
             }
-            marcarError(notificacion, "El push service respondio HTTP " + statusCode);
+            String detalle = StringUtils.hasText(responseBody) ? ": " + responseBody : "";
+            marcarError(notificacion, "El push service respondio HTTP " + statusCode + detalle);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             marcarError(notificacion, errorPara(ex));
@@ -196,14 +190,13 @@ public class PushNotificationService {
     }
 
     private void marcarEnviada(NotificacionPush notificacion) {
-        System.out.println("PUSH ENVIADA");
         notificacion.setEstado(EstadoNotificacion.ENVIADA);
         notificacion.setSentAt(LocalDateTime.now());
         notificacion.setErrorEnvio(null);
     }
 
     private void marcarError(NotificacionPush notificacion, String error) {
-        System.out.println("PUSH ERROR: " + error);
+        log.warn("No se pudo enviar la notificacion push {}: {}", notificacion.getId(), error);
         notificacion.setEstado(EstadoNotificacion.ERROR);
         notificacion.setErrorEnvio(error);
     }

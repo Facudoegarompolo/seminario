@@ -13,4 +13,6 @@ Cambios backend
 - Nuevo endpoint publico: GET /api/public/push/public-key para que el front obtenga la clave publica VAPID.
 - El backend ahora guarda una notificacion por cada suscripcion activa del turno e intenta enviarla si app.push.vapid.public-key y app.push.vapid.private-key estan configuradas.
 - Si las claves VAPID no estan configuradas, las notificaciones quedan pendientes y no se rompe el flujo actual.
+- Para Web Push configurar APP_PUSH_VAPID_PUBLIC_KEY, APP_PUSH_VAPID_PRIVATE_KEY y APP_PUSH_VAPID_SUBJECT en el backend. Las claves deben pertenecer al mismo par y no deben rotarse sin renovar las suscripciones.
+- En iPhone/iPad se requiere iOS 16.4 o posterior, HTTPS y agregar la web a la pantalla de inicio. La solicitud de permiso se realiza desde el switch de notificaciones dentro de la app instalada.
 - Nuevo endpoint admin: PATCH /api/admin/locales/{localId}/logo para agregar, modificar o quitar el link del logo del local.

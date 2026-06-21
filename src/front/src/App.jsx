@@ -12,6 +12,15 @@ import Estado from './cliente/paginas/Estado'
 
 import './cliente/estilos/global.css'
 
+function InicioAplicacion() {
+  const tokenPublico = window.localStorage.getItem('dq_turno_token')
+  const destino = tokenPublico
+    ? `/turno/${tokenPublico}`
+    : '/fila/starbucks-uade'
+
+  return <Navigate to={destino} replace />
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -27,6 +36,7 @@ function App() {
         </Route>
         <Route path="/fila/:codigoPublico" element={<Inicio />} />
         <Route path="/turno/:tokenPublico" element={<Estado />} />
+        <Route path="/app" element={<InicioAplicacion />} />
         <Route path="*" element={<Navigate to="/admin/login" replace />} />
       </Routes>
     </BrowserRouter>
