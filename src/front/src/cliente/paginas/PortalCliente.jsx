@@ -1,9 +1,39 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, Navigate } from 'react-router-dom'
 import logoDigitalQueue from '../../shared/assets/logo.jpeg'
+import publicTurnoService from '../../shared/services/publicTurnoService'
 import { obtenerUltimoLocal } from '../utils/ultimoLocal'
+import { obtenerTurnoActivo } from '../utils/sesionTurno'
 
 function PortalCliente() {
   const ultimoLocal = obtenerUltimoLocal()
+  const turnoActivo = obtenerTurnoActivo()
+  const [tokenRecuperado, setTokenRecuperado] = useState(null)
+
+  useEffect(() => {
+    if (turnoActivo?.tokenPublico) return
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+
+    const recuperarTurno = async () => {
+      try {
+        const registration = await navigator.serviceWorker.getRegistration()
+        const subscription = await registration?.pushManager.getSubscription()
+        if (!subscription) return
+
+        const data = await publicTurnoService.recuperarTurnoActivo(subscription)
+        setTokenRecuperado(data.tokenPublico)
+      } catch {
+        // No tener un turno asociado es un estado normal del portal público.
+      }
+    }
+
+    recuperarTurno()
+  }, [turnoActivo?.tokenPublico])
+
+  const tokenPublico = turnoActivo?.tokenPublico || tokenRecuperado
+  if (tokenPublico) {
+    return <Navigate to={`/turno/${tokenPublico}`} replace />
+  }
 
   return (
     <main className="pantalla portal-cliente">

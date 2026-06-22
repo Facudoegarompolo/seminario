@@ -5,6 +5,7 @@ import BotonPrincipal from '../componentes/BotonPrincipal'
 import logoElAntojo from '../assets/starbucks.svg'
 import publicFilaService from '../../shared/services/publicFilaService'
 import { guardarUltimoLocal } from '../utils/ultimoLocal'
+import { guardarTurnoActivo } from '../utils/sesionTurno'
 
 function Inicio() {
   const navigate = useNavigate()
@@ -42,6 +43,11 @@ function Inicio() {
       const turno = await publicFilaService.crearTurno(codigoPublico, {
         nombreCliente: nombreCliente.trim() || undefined,
         cantidadIntegrantes: 1,
+      })
+      guardarTurnoActivo(turno.tokenPublico, {
+        ...turno,
+        codigoPublico,
+        nombreLocal: fila?.nombreLocal,
       })
       navigate(`/turno/${turno.tokenPublico}`)
     } catch (err) {

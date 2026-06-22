@@ -2,7 +2,9 @@ function TurnoCard({ turno, onCall, onFinish, onCancel, onDetail }) {
   return (
     <article className="turno-card">
       <div className="turno-card-main">
-        <div className="turno-number">#{turno.numeroTurno}</div>
+        <div className="turno-number">
+          {turno.nombreCliente || 'Cliente anónimo'} · #{turno.numeroTurno}
+        </div>
         <div>
           <p className="turno-state">{turno.estadoLabel}</p>
           <p className="turno-meta">

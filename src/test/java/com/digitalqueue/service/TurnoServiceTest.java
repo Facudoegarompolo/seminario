@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -25,13 +26,15 @@ class TurnoServiceTest {
 
     private final TurnoRepository turnoRepository = mock(TurnoRepository.class);
     private final PuntoAccesoRepository puntoAccesoRepository = mock(PuntoAccesoRepository.class);
+    private final LocalRepository localRepository = mock(LocalRepository.class);
+    private final PushNotificationService pushNotificationService = mock(PushNotificationService.class);
     private final TurnoService service = new TurnoService(
             turnoRepository,
             puntoAccesoRepository,
-            mock(LocalRepository.class),
+            localRepository,
             mock(EstimacionEsperaService.class),
             mock(MetricasFilaService.class),
-            mock(PushNotificationService.class)
+            pushNotificationService
     );
 
     @Test
@@ -75,5 +78,38 @@ class TurnoServiceTest {
 
         assertEquals("cafe-central", response.getCodigoPublico());
         assertEquals("Cafe Central", response.getNombreLocal());
+    }
+
+    @Test
+    void permiteCancelarUnTurnoQueYaFueLlamado() {
+        Local local = Local.builder()
+                .id(4L)
+                .nombre("Cafe Central")
+                .build();
+        Fila fila = Fila.builder()
+                .id(7L)
+                .local(local)
+                .queueStatus(QueueStatus.NORMAL)
+                .build();
+        Turno turno = Turno.builder()
+                .id(10L)
+                .fila(fila)
+                .numeroTurno(8)
+                .tokenPublico("turno-llamado")
+                .estado(EstadoTurno.LLAMADO)
+                .nombreCliente("Ana")
+                .cantidadIntegrantes(1)
+                .build();
+
+        when(turnoRepository.findByTokenPublico("turno-llamado")).thenReturn(Optional.of(turno));
+        when(turnoRepository.save(turno)).thenReturn(turno);
+
+        TurnoEstadoResponse response = service.cancelarTurno("turno-llamado");
+
+        assertEquals(EstadoTurno.CANCELADO, response.getEstado());
+        verify(pushNotificationService).registrarNotificacionPendiente(
+                turno,
+                com.digitalqueue.model.enums.TipoNotificacion.TURNO_CANCELADO
+        );
     }
 }

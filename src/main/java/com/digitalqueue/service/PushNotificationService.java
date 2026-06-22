@@ -6,6 +6,7 @@ import com.digitalqueue.model.NotificacionPush;
 import com.digitalqueue.model.PushSubscription;
 import com.digitalqueue.model.Turno;
 import com.digitalqueue.model.enums.EstadoNotificacion;
+import com.digitalqueue.model.enums.EstadoTurno;
 import com.digitalqueue.model.enums.TipoNotificacion;
 import com.digitalqueue.repository.NotificacionPushRepository;
 import com.digitalqueue.repository.PushSubscriptionRepository;
@@ -43,6 +44,12 @@ import java.util.concurrent.ExecutionException;
 public class PushNotificationService {
 
     private static final int PUSH_TTL_SECONDS = 5 * 60;
+    private static final List<EstadoTurno> ESTADOS_TURNO_ACTIVO = List.of(
+            EstadoTurno.ESPERANDO,
+            EstadoTurno.PROXIMO,
+            EstadoTurno.LLAMADO,
+            EstadoTurno.ATENDIENDO
+    );
 
     private final TurnoRepository turnoRepository;
     private final PushSubscriptionRepository pushSubscriptionRepository;
@@ -67,6 +74,17 @@ public class PushNotificationService {
 
     public String obtenerClavePublica() {
         return vapidPublicKey;
+    }
+
+    public String recuperarTokenTurnoActivo(String endpoint) {
+        return pushSubscriptionRepository
+                .findFirstByEndpointAndActivoTrueAndTurnoEstadoInOrderByUpdatedAtDesc(
+                        endpoint,
+                        ESTADOS_TURNO_ACTIVO
+                )
+                .map(PushSubscription::getTurno)
+                .map(Turno::getTokenPublico)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No hay un turno activo para este dispositivo"));
     }
 
     @Transactional

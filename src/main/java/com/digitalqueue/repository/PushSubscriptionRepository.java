@@ -1,6 +1,7 @@
 package com.digitalqueue.repository;
 
 import com.digitalqueue.model.PushSubscription;
+import com.digitalqueue.model.enums.EstadoTurno;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -11,6 +12,11 @@ public interface PushSubscriptionRepository extends JpaRepository<PushSubscripti
     List<PushSubscription> findByTurnoIdAndActivoTrue(Long turnoId);
 
     Optional<PushSubscription> findByTurnoIdAndEndpoint(Long turnoId, String endpoint);
+
+    Optional<PushSubscription> findFirstByEndpointAndActivoTrueAndTurnoEstadoInOrderByUpdatedAtDesc(
+            String endpoint,
+            List<EstadoTurno> estados
+    );
 
     boolean existsByTurnoIdAndActivoTrue(Long turnoId);
 }

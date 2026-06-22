@@ -103,7 +103,7 @@ function Fila() {
         filteredTurnos.map((turno) => (
           <div key={turno.turnoId} className="fila-item">
             <div className="fila-item-left">
-              <h3>#{turno.numeroTurno}</h3>
+              <h3>{turno.nombreCliente || 'Cliente anónimo'} · #{turno.numeroTurno}</h3>
 
               <div className="fila-item-meta">
                 <span className={`status-dot ${turno.statusColor}`} />

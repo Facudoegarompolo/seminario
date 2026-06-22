@@ -31,6 +31,13 @@ const publicTurnoService = {
       },
     )
   },
+
+  recuperarTurnoActivo: async (subscription) => {
+    const response = await api.post('/public/push-subscriptions/turno-activo', {
+      endpoint: subscription.endpoint,
+    })
+    return response.data
+  },
 }
 
 export default publicTurnoService

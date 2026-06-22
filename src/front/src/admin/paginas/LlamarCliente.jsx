@@ -81,6 +81,9 @@ function LlamarCliente() {
       <div className="llamar-card">
         <div className="bell-icon">🔔</div>
         <h3>Turno actual</h3>
+        {turno && (
+          <p className="llamar-nombre">{turno.nombreCliente || 'Cliente anónimo'}</p>
+        )}
         <div className="llamar-turno">
           {loading ? '...' : turno ? `#${turno.numeroTurno}` : '—'}
         </div>

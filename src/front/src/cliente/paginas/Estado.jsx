@@ -5,6 +5,7 @@ import BarraProgreso from '../componentes/BarraProgreso'
 import TarjetaEstado from '../componentes/TarjetaEstado'
 import publicTurnoService from '../../shared/services/publicTurnoService'
 import { guardarUltimoLocal } from '../utils/ultimoLocal'
+import { guardarTurnoActivo, limpiarTurnoActivo } from '../utils/sesionTurno'
 const calcularProgreso = (estado, personasAdelante) => {
   if (estado === 'LLAMADO' || personasAdelante === 0) return 100
   if (personasAdelante <= 2) return 75
@@ -47,6 +48,12 @@ const CONFIG_ESTADO = {
     icono: '❌',
     titulo: 'Turno cancelado',
     mensaje: 'Podés volver a anotarte cuando quieras.'
+  },
+
+  EXPIRADO: {
+    icono: '❌',
+    titulo: 'Turno vencido',
+    mensaje: 'Este turno ya no se encuentra activo.'
   }
 }
 const urlBase64ToUint8Array = (base64String) => {
@@ -109,7 +116,11 @@ function Estado() {
         const data = await publicTurnoService.getEstado(tokenPublico)
         setTurno(data)
         guardarUltimoLocal(data.codigoPublico, data.nombreLocal)
-      } catch {
+        guardarTurnoActivo(tokenPublico, data)
+      } catch (err) {
+        if (err.response?.status === 404) {
+          limpiarTurnoActivo(tokenPublico)
+        }
         setError('No se pudo cargar tu turno.')
       } finally {
         setLoading(false)
@@ -227,11 +238,12 @@ function Estado() {
     CONFIG_ESTADO[estado] || CONFIG_ESTADO.ESPERANDO
 
   const progreso = calcularProgreso(estado, personasAdelante)
-  const puedeCancelar = estado === 'ESPERANDO' || estado === 'PROXIMO'
+  const puedeCancelar = ['ESPERANDO', 'PROXIMO', 'LLAMADO'].includes(estado)
   const turnoTerminado = [
     'FINALIZADO',
     'NO_PRESENTADO',
     'CANCELADO',
+    'EXPIRADO',
   ].includes(estado)
   const nombreCliente =
     turno?.nombreCliente
@@ -248,6 +260,7 @@ function Estado() {
     try {
       const turnoCancelado = await publicTurnoService.cancelar(tokenPublico)
       setTurno(turnoCancelado)
+      limpiarTurnoActivo(tokenPublico)
       guardarUltimoLocal(
         turnoCancelado.codigoPublico,
         turnoCancelado.nombreLocal,
@@ -375,7 +388,7 @@ function Estado() {
           className="boton-salir-fila"
           onClick={handleCancelarTurno}
         >
-          Salir de la fila
+          {estado === 'LLAMADO' ? 'Cancelar mi turno' : 'Salir de la fila'}
         </button>
       )}
 

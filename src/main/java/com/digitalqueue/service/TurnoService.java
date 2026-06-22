@@ -203,8 +203,14 @@ public class TurnoService {
         Turno turno = turnoRepository.findByTokenPublico(tokenPublico)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
 
-        if (turno.getEstado() != EstadoTurno.ESPERANDO && turno.getEstado() != EstadoTurno.PROXIMO) {
-            throw new OperacionInvalidaException("Solo se pueden cancelar turnos que siguen en la fila");
+        if (turno.getEstado() != EstadoTurno.ESPERANDO
+                && turno.getEstado() != EstadoTurno.PROXIMO
+                && turno.getEstado() != EstadoTurno.LLAMADO) {
+            throw new OperacionInvalidaException("El turno ya no se puede cancelar");
+        }
+
+        if (turno.getEstado() == EstadoTurno.LLAMADO && esConsumoEnLocal(turno.getFila().getLocal())) {
+            restarPersonasActuales(turno.getFila().getLocal(), turno.getCantidadIntegrantes());
         }
 
         turno.setEstado(EstadoTurno.CANCELADO);
