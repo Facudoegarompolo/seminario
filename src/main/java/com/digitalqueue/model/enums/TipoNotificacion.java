@@ -6,5 +6,6 @@ public enum TipoNotificacion {
     TURNO_LLAMADO,
     TURNO_EXPIRADO,
     TURNO_CANCELADO,
+    TURNO_FINALIZADO,
     NO_PRESENTADO
 }

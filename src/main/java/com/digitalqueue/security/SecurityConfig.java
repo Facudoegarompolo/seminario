@@ -2,19 +2,28 @@ package com.digitalqueue.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())
                 // Como es API REST y todavía no usamos sesiones ni formularios, lo desactivamos
                 .csrf(AbstractHttpConfigurer::disable)
 
@@ -34,17 +43,23 @@ public class SecurityConfig {
                         // Endpoints públicos para usuarios comunes
                         .requestMatchers("/api/public/**").permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/api/admin/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/admin/cuentas").permitAll()
+
                         // WebSocket, lo dejamos permitido por ahora
                         .requestMatchers("/ws/**").permitAll()
 
-                        // TEMPORAL: admin permitido para poder probar el MVP
-                        // Más adelante esto cambia a authenticated()
-                        .requestMatchers("/api/admin/**").permitAll()
+                        .requestMatchers("/api/admin/**").authenticated()
 
-                        // TEMPORAL MVP/testing: no exigimos JWT en ningun endpoint.
-                        // La configuracion de seguridad queda lista para reactivar authenticated().
                         .anyRequest().permitAll()
-                );
+                )
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, ex) ->
+                                response.sendError(HttpStatus.UNAUTHORIZED.value(), "Autenticación requerida"))
+                        .accessDeniedHandler((request, response, ex) ->
+                                response.sendError(HttpStatus.FORBIDDEN.value(), "Acceso denegado"))
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

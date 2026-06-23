@@ -101,10 +101,28 @@ function Estado() {
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
 
-    navigator.serviceWorker.getRegistration()
-      .then((registration) => registration?.pushManager.getSubscription())
-      .then((subscription) => setNotificacionesActivas(Boolean(subscription)))
-      .catch(() => setNotificacionesActivas(false))
+    let efectoActivo = true
+
+    const sincronizarSuscripcion = async () => {
+      try {
+        const registration = await navigator.serviceWorker.getRegistration()
+        const subscription = await registration?.pushManager.getSubscription()
+        if (!subscription) {
+          if (efectoActivo) setNotificacionesActivas(false)
+          return
+        }
+
+        await publicTurnoService.registrarPushSubscription(tokenPublico, subscription)
+        if (efectoActivo) setNotificacionesActivas(true)
+      } catch {
+        if (efectoActivo) setNotificacionesActivas(false)
+      }
+    }
+
+    sincronizarSuscripcion()
+    return () => {
+      efectoActivo = false
+    }
   }, [tokenPublico])
 
   useEffect(() => {
@@ -229,6 +247,28 @@ function Estado() {
           message: error?.message,
         })
       )
+    }
+  }
+
+  const desactivarNotificaciones = async () => {
+    try {
+      const registration = await navigator.serviceWorker.getRegistration()
+      const subscription = await registration?.pushManager.getSubscription()
+      if (subscription) {
+        await publicTurnoService.desactivarPushSubscription(tokenPublico, subscription)
+        await subscription.unsubscribe()
+      }
+      setNotificacionesActivas(false)
+    } catch {
+      alert('No se pudieron desactivar las notificaciones.')
+    }
+  }
+
+  const cambiarNotificaciones = (event) => {
+    if (event.target.checked) {
+      activarNotificaciones()
+    } else {
+      desactivarNotificaciones()
     }
   }
 
@@ -376,7 +416,7 @@ function Estado() {
             <input
               type="checkbox"
               checked={notificacionesActivas}
-              onChange={activarNotificaciones}
+              onChange={cambiarNotificaciones}
             />
             <span></span>
           </label>

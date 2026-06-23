@@ -76,6 +76,7 @@ public class PushNotificationService {
         return vapidPublicKey;
     }
 
+    @Transactional(readOnly = true)
     public String recuperarTokenTurnoActivo(String endpoint) {
         return pushSubscriptionRepository
                 .findFirstByEndpointAndActivoTrueAndTurnoEstadoInOrderByUpdatedAtDesc(
@@ -92,6 +93,10 @@ public class PushNotificationService {
         Turno turno = turnoRepository.findByTokenPublico(tokenPublico)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
 
+        if (!ESTADOS_TURNO_ACTIVO.contains(turno.getEstado())) {
+            throw new RecursoNoEncontradoException("El turno ya no está activo");
+        }
+
         PushSubscription subscription = pushSubscriptionRepository
                 .findByTurnoIdAndEndpoint(turno.getId(), request.getEndpoint())
                 .orElseGet(() -> PushSubscription.builder()
@@ -104,6 +109,18 @@ public class PushNotificationService {
         subscription.setActivo(true);
 
         pushSubscriptionRepository.save(subscription);
+    }
+
+    @Transactional
+    public void desactivarSuscripcion(String tokenPublico, String endpoint) {
+        Turno turno = turnoRepository.findByTokenPublico(tokenPublico)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
+
+        pushSubscriptionRepository.findByTurnoIdAndEndpoint(turno.getId(), endpoint)
+                .ifPresent(subscription -> {
+                    subscription.setActivo(false);
+                    pushSubscriptionRepository.save(subscription);
+                });
     }
 
     @Transactional
@@ -232,6 +249,7 @@ public class PushNotificationService {
             case TURNO_PROXIMO -> "Tu turno se acerca";
             case TURNO_LLAMADO -> "Es tu turno";
             case TURNO_CANCELADO -> "Turno cancelado";
+            case TURNO_FINALIZADO -> "Turno finalizado";
             case NO_PRESENTADO -> "Turno no presentado";
             case TURNO_EXPIRADO -> "Turno expirado";
             case POSICION_ACTUALIZADA -> "Tu posicion cambio";
@@ -245,6 +263,7 @@ public class PushNotificationService {
             case TURNO_PROXIMO -> "Estate atento: tu turno" + numeroTurno + " esta proximo.";
             case TURNO_LLAMADO -> "Presentate ahora: llamaron tu turno" + numeroTurno + ".";
             case TURNO_CANCELADO -> "Tu turno" + numeroTurno + " fue cancelado.";
+            case TURNO_FINALIZADO -> "Tu turno" + numeroTurno + " fue finalizado. Gracias por tu visita.";
             case NO_PRESENTADO -> "Tu turno" + numeroTurno + " fue marcado como no presentado.";
             case TURNO_EXPIRADO -> "Tu turno" + numeroTurno + " expiro.";
             case POSICION_ACTUALIZADA -> "Actualizamos tu posicion en la fila.";

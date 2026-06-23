@@ -44,6 +44,9 @@ public class TurnoService {
     private static final List<EstadoTurno> ESTADOS_EN_ESPERA = List.of(
             EstadoTurno.ESPERANDO,
             EstadoTurno.PROXIMO);
+    private static final List<EstadoTurno> ESTADOS_EN_ATENCION = List.of(
+            EstadoTurno.LLAMADO,
+            EstadoTurno.ATENDIENDO);
     private static final String NOMBRE_CLIENTE_ANONIMO = "Cliente anónimo";
 
     @Transactional
@@ -130,6 +133,10 @@ public class TurnoService {
 
     @Transactional
     public TurnoEstadoResponse llamarSiguiente(Long filaId) {
+        if (turnoRepository.existsByFilaIdAndEstadoIn(filaId, ESTADOS_EN_ATENCION)) {
+            throw new OperacionInvalidaException("Primero resolvé el turno que ya fue llamado");
+        }
+
         Turno turno = turnoRepository
                 .findFirstByFilaIdAndEstadoInOrderByCreatedAtAsc(filaId, ESTADOS_EN_ESPERA)
                 .orElseThrow(() -> new OperacionInvalidaException("No hay turnos esperando"));
@@ -173,6 +180,10 @@ public class TurnoService {
         Turno turno = turnoRepository.findById(turnoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
 
+        if (!ESTADOS_EN_ATENCION.contains(turno.getEstado())) {
+            throw new OperacionInvalidaException("Solo se puede finalizar un turno llamado");
+        }
+
         turno.setEstado(EstadoTurno.FINALIZADO);
         turno.setCompletedAt(LocalDateTime.now());
         if (esConsumoEnLocal(turno.getFila().getLocal())) {
@@ -180,7 +191,7 @@ public class TurnoService {
         }
 
         Turno turnoGuardado = turnoRepository.save(turno);
-        pushNotificationService.registrarNotificacionPendiente(turnoGuardado, TipoNotificacion.NO_PRESENTADO);
+        pushNotificationService.registrarNotificacionPendiente(turnoGuardado, TipoNotificacion.TURNO_FINALIZADO);
 
         return mapToTurnoEstadoResponse(turnoGuardado);
     }
@@ -190,10 +201,19 @@ public class TurnoService {
         Turno turno = turnoRepository.findById(turnoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
 
+        if (turno.getEstado() != EstadoTurno.LLAMADO) {
+            throw new OperacionInvalidaException("Solo un turno llamado puede marcarse como no presentado");
+        }
+
+        if (esConsumoEnLocal(turno.getFila().getLocal())) {
+            restarPersonasActuales(turno.getFila().getLocal(), turno.getCantidadIntegrantes());
+        }
+
         turno.setEstado(EstadoTurno.NO_PRESENTADO);
         turno.setCompletedAt(LocalDateTime.now());
 
         Turno turnoGuardado = turnoRepository.save(turno);
+        pushNotificationService.registrarNotificacionPendiente(turnoGuardado, TipoNotificacion.NO_PRESENTADO);
 
         return mapToTurnoEstadoResponse(turnoGuardado);
     }

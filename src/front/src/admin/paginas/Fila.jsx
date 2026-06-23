@@ -49,10 +49,10 @@ function Fila() {
   }, [])
 
   const enrichedTurnos = useMemo(() => {
-    return turnos.map((turno, index) => {
+    return turnos.map((turno) => {
       const statusInfo = STATUS_MAP[turno.estado] || { label: turno.estado, color: 'gray' }
       const personas = turno.cantidadIntegrantes ?? 1
-      const tiempoEstimado = turno.tiempoEstimadoMinutos ? `${turno.tiempoEstimadoMinutos} min` : `${(index + 1) * 5} min`
+      const tiempoEstimado = `${turno.tiempoEstimadoInformadoMinutos ?? 0} min`
 
       return {
         ...turno,

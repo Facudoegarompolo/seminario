@@ -3,6 +3,7 @@ package com.digitalqueue.controller;
 import com.digitalqueue.dto.TurnoAdminResponse;
 import com.digitalqueue.dto.TurnoEstadoResponse;
 import com.digitalqueue.service.TurnoService;
+import com.digitalqueue.service.AdminAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,12 +16,26 @@ import java.util.List;
 public class AdminFilaController {
 
     private final TurnoService turnoService;
+    private final AdminAccessService adminAccessService;
+
+    @GetMapping("/fila/turnos")
+    public ResponseEntity<List<TurnoAdminResponse>> obtenerTurnosDeFilaActual() {
+        Long filaId = adminAccessService.resolverFilaId(null);
+        return ResponseEntity.ok(turnoService.obtenerTurnosDeFila(filaId));
+    }
+
+    @PostMapping("/fila/llamar-siguiente")
+    public ResponseEntity<TurnoEstadoResponse> llamarSiguienteDeFilaActual() {
+        Long filaId = adminAccessService.resolverFilaId(null);
+        return ResponseEntity.ok(turnoService.llamarSiguiente(filaId));
+    }
 
     @GetMapping("/filas/{filaId}/turnos")
     public ResponseEntity<List<TurnoAdminResponse>> obtenerTurnosDeFila(
             @PathVariable Long filaId
     ) {
-        List<TurnoAdminResponse> response = turnoService.obtenerTurnosDeFila(filaId);
+        Long filaIdAutorizada = adminAccessService.resolverFilaId(filaId);
+        List<TurnoAdminResponse> response = turnoService.obtenerTurnosDeFila(filaIdAutorizada);
         return ResponseEntity.ok(response);
     }
 
@@ -28,7 +43,8 @@ public class AdminFilaController {
     public ResponseEntity<TurnoEstadoResponse> llamarSiguiente(
             @PathVariable Long filaId
     ) {
-        TurnoEstadoResponse response = turnoService.llamarSiguiente(filaId);
+        Long filaIdAutorizada = adminAccessService.resolverFilaId(filaId);
+        TurnoEstadoResponse response = turnoService.llamarSiguiente(filaIdAutorizada);
         return ResponseEntity.ok(response);
     }
 
@@ -36,6 +52,7 @@ public class AdminFilaController {
     public ResponseEntity<TurnoEstadoResponse> finalizarTurno(
             @PathVariable Long turnoId
     ) {
+        adminAccessService.validarTurno(turnoId);
         TurnoEstadoResponse response = turnoService.finalizarTurno(turnoId);
         return ResponseEntity.ok(response);
     }
@@ -44,6 +61,7 @@ public class AdminFilaController {
     public ResponseEntity<TurnoEstadoResponse> marcarNoPresentado(
             @PathVariable Long turnoId
     ) {
+        adminAccessService.validarTurno(turnoId);
         TurnoEstadoResponse response = turnoService.marcarNoPresentado(turnoId);
         return ResponseEntity.ok(response);
     }

@@ -38,6 +38,12 @@ const publicTurnoService = {
     })
     return response.data
   },
+
+  desactivarPushSubscription: async (tokenPublico, subscription) => {
+    await api.delete(`/public/turnos/${tokenPublico}/push-subscriptions`, {
+      data: { endpoint: subscription.endpoint },
+    })
+  },
 }
 
 export default publicTurnoService

@@ -9,6 +9,8 @@ import com.digitalqueue.model.enums.EstadoFila;
 import com.digitalqueue.model.enums.EstadoTurno;
 import com.digitalqueue.model.enums.QueueStatus;
 import com.digitalqueue.model.enums.TipoCliente;
+import com.digitalqueue.model.enums.TipoNotificacion;
+import com.digitalqueue.model.enums.TipoOperacionLocal;
 import com.digitalqueue.repository.LocalRepository;
 import com.digitalqueue.repository.PuntoAccesoRepository;
 import com.digitalqueue.repository.TurnoRepository;
@@ -18,8 +20,11 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class TurnoServiceTest {
@@ -111,5 +116,72 @@ class TurnoServiceTest {
                 turno,
                 com.digitalqueue.model.enums.TipoNotificacion.TURNO_CANCELADO
         );
+    }
+
+    @Test
+    void noPermiteLlamarOtroTurnoMientrasHayUnoLlamado() {
+        when(turnoRepository.existsByFilaIdAndEstadoIn(eq(7L), any()))
+                .thenReturn(true);
+
+        assertThrows(
+                com.digitalqueue.exception.OperacionInvalidaException.class,
+                () -> service.llamarSiguiente(7L)
+        );
+    }
+
+    @Test
+    void finalizarTurnoLlamadoEnviaNotificacionCorrecta() {
+        Turno turno = turnoLlamado(TipoOperacionLocal.ATENCION_RAPIDA);
+        when(turnoRepository.findById(10L)).thenReturn(Optional.of(turno));
+        when(turnoRepository.save(turno)).thenReturn(turno);
+
+        TurnoEstadoResponse response = service.finalizarTurno(10L);
+
+        assertEquals(EstadoTurno.FINALIZADO, response.getEstado());
+        verify(pushNotificationService).registrarNotificacionPendiente(
+                turno,
+                TipoNotificacion.TURNO_FINALIZADO
+        );
+    }
+
+    @Test
+    void noPresentadoDescuentaOcupacionYNotifica() {
+        Turno turno = turnoLlamado(TipoOperacionLocal.CONSUMO_EN_LOCAL);
+        turno.getFila().getLocal().setPersonasActuales(3);
+        turno.setCantidadIntegrantes(2);
+        when(turnoRepository.findById(10L)).thenReturn(Optional.of(turno));
+        when(turnoRepository.save(turno)).thenReturn(turno);
+
+        TurnoEstadoResponse response = service.marcarNoPresentado(10L);
+
+        assertEquals(EstadoTurno.NO_PRESENTADO, response.getEstado());
+        assertEquals(1, turno.getFila().getLocal().getPersonasActuales());
+        verify(localRepository).save(turno.getFila().getLocal());
+        verify(pushNotificationService).registrarNotificacionPendiente(
+                turno,
+                TipoNotificacion.NO_PRESENTADO
+        );
+    }
+
+    private Turno turnoLlamado(TipoOperacionLocal tipoOperacion) {
+        Local local = Local.builder()
+                .id(4L)
+                .nombre("Cafe Central")
+                .tipoOperacion(tipoOperacion)
+                .build();
+        Fila fila = Fila.builder()
+                .id(7L)
+                .local(local)
+                .queueStatus(QueueStatus.NORMAL)
+                .build();
+        return Turno.builder()
+                .id(10L)
+                .fila(fila)
+                .numeroTurno(8)
+                .tokenPublico("turno-llamado")
+                .estado(EstadoTurno.LLAMADO)
+                .nombreCliente("Ana")
+                .cantidadIntegrantes(1)
+                .build();
     }
 }

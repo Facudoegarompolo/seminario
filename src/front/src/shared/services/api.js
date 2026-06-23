@@ -23,6 +23,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('dq_admin_token')
       localStorage.removeItem('dq_admin_user')
+      if (window.location.pathname.startsWith('/admin') &&
+          window.location.pathname !== '/admin/login') {
+        window.location.assign('/admin/login')
+      }
     }
     return Promise.reject(error)
   },

@@ -16,6 +16,8 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
 
     Optional<Turno> findByTokenPublico(String tokenPublico);
 
+    boolean existsByIdAndFilaLocalId(Long id, Long localId);
+
     List<Turno> findByFilaIdOrderByCreatedAtAsc(Long filaId);
 
     Optional<Turno> findTopByFilaIdOrderByNumeroTurnoDesc(Long filaId);
@@ -35,6 +37,8 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
             Long filaId,
             Collection<EstadoTurno> estados
     );
+
+    boolean existsByFilaIdAndEstadoIn(Long filaId, Collection<EstadoTurno> estados);
 
     long countByFilaIdAndEstadoAndCompletedAtGreaterThanEqualAndCompletedAtLessThan(
             Long filaId,

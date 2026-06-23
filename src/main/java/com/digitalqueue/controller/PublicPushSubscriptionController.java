@@ -1,6 +1,7 @@
 package com.digitalqueue.controller;
 
 import com.digitalqueue.dto.PushSubscriptionRequest;
+import com.digitalqueue.dto.PushEndpointRequest;
 import com.digitalqueue.service.PushNotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,15 @@ public class PublicPushSubscriptionController {
             @Valid @RequestBody PushSubscriptionRequest request
     ) {
         pushNotificationService.registrarSuscripcion(tokenPublico, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> desactivarSuscripcion(
+            @PathVariable String tokenPublico,
+            @Valid @RequestBody PushEndpointRequest request
+    ) {
+        pushNotificationService.desactivarSuscripcion(tokenPublico, request.getEndpoint());
         return ResponseEntity.noContent().build();
     }
 }

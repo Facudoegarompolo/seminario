@@ -1,15 +1,13 @@
 import api from './api'
 
-const DEFAULT_FILA_ID = 1
-
 const queueService = {
-  getTurnos: async (filaId = DEFAULT_FILA_ID) => {
-    const response = await api.get(`/admin/filas/${filaId}/turnos`)
+  getTurnos: async () => {
+    const response = await api.get('/admin/fila/turnos')
     const data = response.data
     return Array.isArray(data) ? data : []
   },
-  llamarSiguiente: async (filaId = DEFAULT_FILA_ID) => {
-    const response = await api.post(`/admin/filas/${filaId}/llamar-siguiente`)
+  llamarSiguiente: async () => {
+    const response = await api.post('/admin/fila/llamar-siguiente')
     return response.data
   },
   finalizarTurno: async (turnoId) => {
