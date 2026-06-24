@@ -9,7 +9,7 @@ import { obtenerTokenTurnoDesdeUrl } from '../utils/turnoLink'
 function PortalCliente() {
   const ultimoLocal = obtenerUltimoLocal()
   const tokenTurnoUrl = obtenerTokenTurnoDesdeUrl()
-  const turnoActivo = obtenerTurnoActivo()
+  const [turnoActivo] = useState(() => obtenerTurnoActivo())
   const [tokenRecuperado, setTokenRecuperado] = useState(null)
 
   useEffect(() => {

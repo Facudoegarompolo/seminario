@@ -11,7 +11,5 @@ export const obtenerTokenTurnoDesdeUrl = (search = window.location.search) => {
 }
 
 export const crearStartUrlTurno = (tokenPublico) => {
-  const params = new URLSearchParams()
-  params.set(TURNO_QUERY_PARAM, tokenPublico)
-  return `/?${params.toString()}`
+  return `/turno/${encodeURIComponent(tokenPublico)}`
 }

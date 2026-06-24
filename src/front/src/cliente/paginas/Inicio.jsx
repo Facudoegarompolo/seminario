@@ -12,7 +12,7 @@ function Inicio() {
   const navigate = useNavigate()
   const { codigoPublico = 'starbucks-uade' } = useParams()
   const tokenTurnoUrl = obtenerTokenTurnoDesdeUrl()
-  const turnoActivo = obtenerTurnoActivo()
+  const [turnoActivo] = useState(() => obtenerTurnoActivo())
   const [nombreCliente, setNombreCliente] = useState('')
   const [fila, setFila] = useState(null)
   const [loading, setLoading] = useState(true)
