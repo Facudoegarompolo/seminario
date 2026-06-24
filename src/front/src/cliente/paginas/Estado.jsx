@@ -6,7 +6,7 @@ import TarjetaEstado from '../componentes/TarjetaEstado'
 import publicTurnoService from '../../shared/services/publicTurnoService'
 import { guardarUltimoLocal } from '../utils/ultimoLocal'
 import { guardarTurnoActivo, limpiarTurnoActivo } from '../utils/sesionTurno'
-import { prepararManifestTurno } from '../utils/manifestTurno'
+import { fijarUrlInstalacionTurno, prepararManifestTurno } from '../utils/manifestTurno'
 const calcularProgreso = (estado, personasAdelante) => {
   if (estado === 'LLAMADO' || personasAdelante === 0) return 100
   if (personasAdelante <= 2) return 75
@@ -180,6 +180,7 @@ function Estado() {
       }
 
       if (esIOS && !esPWA) {
+        fijarUrlInstalacionTurno(tokenPublico)
         await prepararManifestTurno(tokenPublico)
         setMostrarGuiaInstalacion(true)
         return
