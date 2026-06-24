@@ -1,8 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import queueService from '../../shared/services/queueService'
 import BackButton from '../componentes/BackButton'
 import StatsButton from '../componentes/StatsButton'
 import '../estilos/LlamarCliente.css'
+
+const REFRESH_INTERVAL_MS = 5000
+const ESTADOS_EN_ATENCION = ['LLAMADO', 'ATENDIENDO']
+const ESTADOS_EN_ESPERA = ['ESPERANDO', 'PROXIMO']
+
+function seleccionarTurno(turnos, ignoredTurnoId) {
+  const turnosDisponibles = turnos.filter((item) => item.turnoId !== ignoredTurnoId)
+  const enAtencion = turnosDisponibles.find((item) => ESTADOS_EN_ATENCION.includes(item.estado))
+  const siguiente = turnosDisponibles.find((item) => ESTADOS_EN_ESPERA.includes(item.estado))
+
+  return {
+    turnoActual: enAtencion || siguiente || null,
+    turnoLlamado: Boolean(enAtencion),
+  }
+}
 
 function LlamarCliente() {
   const [turno, setTurno] = useState(null)
@@ -11,17 +26,19 @@ function LlamarCliente() {
   const [turnoLlamado, setTurnoLlamado] = useState(false)
   const [message, setMessage] = useState('Cargando el siguiente cliente...')
 
-  const fetchTurno = async () => {
-    setLoading(true)
+  const fetchTurno = useCallback(async ({ showLoading = false, ignoredTurnoId } = {}) => {
+    if (showLoading) {
+      setLoading(true)
+    }
+
     try {
       const turnos = await queueService.getTurnos()
-      const enAtencion = turnos.find((item) => item.estado === 'LLAMADO' || item.estado === 'ATENDIENDO')
-      const siguiente = turnos.find((item) => item.estado === 'ESPERANDO' || item.estado === 'PROXIMO')
-      const turnoActual = enAtencion || siguiente
+      const { turnoActual, turnoLlamado: hayTurnoLlamado } = seleccionarTurno(turnos, ignoredTurnoId)
+
       if (turnoActual) {
         setTurno(turnoActual)
-        setTurnoLlamado(Boolean(enAtencion))
-        setMessage(enAtencion
+        setTurnoLlamado(hayTurnoLlamado)
+        setMessage(hayTurnoLlamado
           ? 'Esperando que el turno llamado sea atendido'
           : 'Listo para llamar al siguiente cliente')
       } else {
@@ -32,18 +49,25 @@ function LlamarCliente() {
     } catch {
       setMessage('No se pudo cargar el siguiente cliente.')
     } finally {
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      }
     }
-  }
+  }, [])
 
   useEffect(() => {
-    const timer = window.setTimeout(fetchTurno, 0)
-    const interval = window.setInterval(fetchTurno, 10000)
+    const timer = window.setTimeout(() => {
+      fetchTurno({ showLoading: true })
+    }, 0)
+    const interval = window.setInterval(() => {
+      fetchTurno()
+    }, REFRESH_INTERVAL_MS)
+
     return () => {
       window.clearTimeout(timer)
       window.clearInterval(interval)
     }
-  }, [])
+  }, [fetchTurno])
 
   const handleCall = async () => {
     if (!turno) return
@@ -73,8 +97,12 @@ function LlamarCliente() {
 
     setBusy(true)
     try {
-      await queueService.finalizarTurno(turno.turnoId)
-      await fetchTurno()
+      const turnoFinalizadoId = turno.turnoId
+      await queueService.finalizarTurno(turnoFinalizadoId)
+      setTurno(null)
+      setTurnoLlamado(false)
+      setMessage('Turno marcado como atendido. Buscando el siguiente cliente...')
+      await fetchTurno({ ignoredTurnoId: turnoFinalizadoId })
     } catch {
       await fetchTurno()
       setMessage('No se pudo finalizar el turno.')
@@ -88,8 +116,11 @@ function LlamarCliente() {
 
     setBusy(true)
     try {
-      await queueService.marcarNoPresentado(turno.turnoId)
-      await fetchTurno()
+      const turnoAusenteId = turno.turnoId
+      await queueService.marcarNoPresentado(turnoAusenteId)
+      setTurno(null)
+      setTurnoLlamado(false)
+      await fetchTurno({ ignoredTurnoId: turnoAusenteId })
     } catch {
       await fetchTurno()
       setMessage('No se pudo marcar el turno como no presentado.')

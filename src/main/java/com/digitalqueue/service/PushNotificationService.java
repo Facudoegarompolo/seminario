@@ -25,7 +25,9 @@ import org.apache.http.util.EntityUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jose4j.lang.JoseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -123,8 +125,18 @@ public class PushNotificationService {
                 });
     }
 
-    @Transactional
+    @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void registrarNotificacionPendiente(Turno turno, TipoNotificacion tipo) {
+        try {
+            registrarNotificacionPendienteInterna(turno, tipo);
+        } catch (RuntimeException ex) {
+            Long turnoId = turno == null ? null : turno.getId();
+            log.warn("No se pudo registrar la notificacion push del turno {} tipo {}", turnoId, tipo, ex);
+        }
+    }
+
+    private void registrarNotificacionPendienteInterna(Turno turno, TipoNotificacion tipo) {
         if (turno == null || turno.getId() == null) {
             return;
         }

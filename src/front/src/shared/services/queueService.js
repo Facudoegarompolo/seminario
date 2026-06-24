@@ -2,7 +2,10 @@ import api from './api'
 
 const queueService = {
   getTurnos: async () => {
-    const response = await api.get('/admin/fila/turnos')
+    const response = await api.get('/admin/fila/turnos', {
+      params: { _t: Date.now() },
+      headers: { 'Cache-Control': 'no-cache' },
+    })
     const data = response.data
     return Array.isArray(data) ? data : []
   },
