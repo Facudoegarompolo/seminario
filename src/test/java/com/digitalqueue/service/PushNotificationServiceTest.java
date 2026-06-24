@@ -6,7 +6,6 @@ import com.digitalqueue.repository.NotificacionPushRepository;
 import com.digitalqueue.repository.PushSubscriptionRepository;
 import com.digitalqueue.repository.TurnoRepository;
 import org.junit.jupiter.api.Test;
-import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Optional;
 
@@ -24,8 +23,7 @@ class PushNotificationServiceTest {
         PushNotificationService service = new PushNotificationService(
                 mock(TurnoRepository.class),
                 subscriptionRepository,
-                mock(NotificacionPushRepository.class),
-                mock(JsonMapper.class)
+                mock(NotificacionPushRepository.class)
         );
         Turno turno = Turno.builder().tokenPublico("turno-iphone").build();
         PushSubscription subscription = PushSubscription.builder().turno(turno).build();

@@ -1,5 +1,7 @@
 package com.digitalqueue.service;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.digitalqueue.dto.PushSubscriptionRequest;
 import com.digitalqueue.exception.RecursoNoEncontradoException;
 import com.digitalqueue.model.NotificacionPush;
@@ -26,8 +28,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -54,7 +54,7 @@ public class PushNotificationService {
     private final TurnoRepository turnoRepository;
     private final PushSubscriptionRepository pushSubscriptionRepository;
     private final NotificacionPushRepository notificacionPushRepository;
-    private final JsonMapper jsonMapper;
+    private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
     @Value("${app.push.vapid.public-key:}")
     private String vapidPublicKey;
@@ -201,6 +201,7 @@ public class PushNotificationService {
 
             if (statusCode == 404 || statusCode == 410) {
                 subscription.setActivo(false);
+                pushSubscriptionRepository.save(subscription);
             }
             String detalle = StringUtils.hasText(responseBody) ? ": " + responseBody : "";
             marcarError(notificacion, "El push service respondio HTTP " + statusCode + detalle);
@@ -228,12 +229,14 @@ public class PushNotificationService {
         notificacion.setEstado(EstadoNotificacion.ENVIADA);
         notificacion.setSentAt(LocalDateTime.now());
         notificacion.setErrorEnvio(null);
+        notificacionPushRepository.save(notificacion);
     }
 
     private void marcarError(NotificacionPush notificacion, String error) {
         log.warn("No se pudo enviar la notificacion push {}: {}", notificacion.getId(), error);
         notificacion.setEstado(EstadoNotificacion.ERROR);
         notificacion.setErrorEnvio(error);
+        notificacionPushRepository.save(notificacion);
     }
 
     private String errorPara(Exception ex) {

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useState } from 'react'
 import queueService from '../../shared/services/queueService'
 import FilterTabs from '../componentes/FilterTabs'
 import BackButton from '../componentes/BackButton'
@@ -22,6 +22,8 @@ const STATUS_MAP = {
   NO_PRESENTADO: { label: 'No se presentó', color: 'red' },
 }
 
+const REFRESH_INTERVAL_MS = 5000
+
 function Fila() {
   const navigate = useNavigate()
   const [turnos, setTurnos] = useState([])
@@ -29,24 +31,38 @@ function Fila() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const fetchTurnos = async () => {
-    setLoading(true)
-    setError(null)
+  const fetchTurnos = useCallback(async ({ showLoading = false } = {}) => {
+    if (showLoading) {
+      setLoading(true)
+    }
 
     try {
       const data = await queueService.getTurnos()
       setTurnos(Array.isArray(data) ? data : [])
+      setError(null)
     } catch {
       setError('No se pudo cargar la fila. Intenta nuevamente.')
     } finally {
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      }
     }
-  }
+  }, [])
 
   useEffect(() => {
-    const timer = window.setTimeout(fetchTurnos, 0)
-    return () => window.clearTimeout(timer)
-  }, [])
+    const timer = window.setTimeout(() => {
+      fetchTurnos({ showLoading: true })
+    }, 0)
+
+    const interval = window.setInterval(() => {
+      fetchTurnos()
+    }, REFRESH_INTERVAL_MS)
+
+    return () => {
+      window.clearTimeout(timer)
+      window.clearInterval(interval)
+    }
+  }, [fetchTurnos])
 
   const enrichedTurnos = useMemo(() => {
     return turnos.map((turno) => {
