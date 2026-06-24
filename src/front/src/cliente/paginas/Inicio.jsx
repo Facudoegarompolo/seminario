@@ -5,16 +5,27 @@ import BotonPrincipal from '../componentes/BotonPrincipal'
 import logoElAntojo from '../assets/starbucks.svg'
 import publicFilaService from '../../shared/services/publicFilaService'
 import { guardarUltimoLocal } from '../utils/ultimoLocal'
-import { guardarTurnoActivo } from '../utils/sesionTurno'
+import { guardarTurnoActivo, obtenerTurnoActivo } from '../utils/sesionTurno'
+import { obtenerTokenTurnoDesdeUrl } from '../utils/turnoLink'
 
 function Inicio() {
   const navigate = useNavigate()
   const { codigoPublico = 'starbucks-uade' } = useParams()
+  const tokenTurnoUrl = obtenerTokenTurnoDesdeUrl()
+  const turnoActivo = obtenerTurnoActivo()
   const [nombreCliente, setNombreCliente] = useState('')
   const [fila, setFila] = useState(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const tokenPublico = tokenTurnoUrl || turnoActivo?.tokenPublico
+    if (!tokenPublico) return
+
+    guardarTurnoActivo(tokenPublico, turnoActivo || {})
+    navigate(`/turno/${tokenPublico}`, { replace: true })
+  }, [navigate, tokenTurnoUrl, turnoActivo])
 
   useEffect(() => {
     const fetchFila = async () => {

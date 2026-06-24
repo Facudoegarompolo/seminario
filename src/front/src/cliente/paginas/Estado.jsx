@@ -6,6 +6,7 @@ import TarjetaEstado from '../componentes/TarjetaEstado'
 import publicTurnoService from '../../shared/services/publicTurnoService'
 import { guardarUltimoLocal } from '../utils/ultimoLocal'
 import { guardarTurnoActivo, limpiarTurnoActivo } from '../utils/sesionTurno'
+import { prepararManifestTurno } from '../utils/manifestTurno'
 const calcularProgreso = (estado, personasAdelante) => {
   if (estado === 'LLAMADO' || personasAdelante === 0) return 100
   if (personasAdelante <= 2) return 75
@@ -99,6 +100,14 @@ function Estado() {
   const [mostrarGuiaInstalacion, setMostrarGuiaInstalacion] = useState(false)
 
   useEffect(() => {
+    if (!tokenPublico) return
+
+    prepararManifestTurno(tokenPublico).catch(() => {
+      // La URL /turno/:token sigue siendo la recuperación principal si falla el manifest dinámico.
+    })
+  }, [tokenPublico])
+
+  useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
 
     let efectoActivo = true
@@ -171,6 +180,7 @@ function Estado() {
       }
 
       if (esIOS && !esPWA) {
+        await prepararManifestTurno(tokenPublico)
         setMostrarGuiaInstalacion(true)
         return
       }
@@ -499,7 +509,8 @@ function Estado() {
             </ol>
 
             <p className="guia-instalacion-nota">
-              El ícono abrirá directamente este turno, sin volver a inscribirte.
+              El ícono abrirá directamente este turno. Si la app abre el inicio,
+              Digital Queue recuperará tu turno automáticamente.
             </p>
             <button
               type="button"

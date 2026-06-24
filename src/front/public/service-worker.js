@@ -1,3 +1,52 @@
+self.addEventListener('install', (event) => {
+    event.waitUntil(self.skipWaiting())
+})
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(self.clients.claim())
+})
+
+self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url)
+
+    if (url.origin !== self.location.origin || url.pathname !== '/turno-manifest.webmanifest') {
+        return
+    }
+
+    const tokenPublico = url.searchParams.get('turno')
+    const startUrl = url.searchParams.get('startUrl') || (tokenPublico ? `/?turno=${encodeURIComponent(tokenPublico)}` : '/')
+
+    event.respondWith(new Response(JSON.stringify({
+        id: tokenPublico ? `/turno/${tokenPublico}` : '/',
+        name: 'Digital Queue',
+        short_name: 'Digital Queue',
+        description: 'Segui tu turno y recibi avisos cuando se acerque.',
+        lang: 'es-AR',
+        scope: '/',
+        start_url: startUrl,
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#ffffff',
+        icons: [
+            {
+                src: '/icon-192.png',
+                sizes: '192x192',
+                type: 'image/png',
+            },
+            {
+                src: '/icon-512.png',
+                sizes: '512x512',
+                type: 'image/png',
+            },
+        ],
+    }), {
+        headers: {
+            'Content-Type': 'application/manifest+json',
+            'Cache-Control': 'no-store',
+        },
+    }))
+})
+
 self.addEventListener('push', (event) => {
     if (!event.data) return
 

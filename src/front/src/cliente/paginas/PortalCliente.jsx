@@ -3,15 +3,22 @@ import { Link, Navigate } from 'react-router-dom'
 import logoDigitalQueue from '../../shared/assets/logo.jpeg'
 import publicTurnoService from '../../shared/services/publicTurnoService'
 import { obtenerUltimoLocal } from '../utils/ultimoLocal'
-import { obtenerTurnoActivo } from '../utils/sesionTurno'
+import { guardarTurnoActivo, obtenerTurnoActivo } from '../utils/sesionTurno'
+import { obtenerTokenTurnoDesdeUrl } from '../utils/turnoLink'
 
 function PortalCliente() {
   const ultimoLocal = obtenerUltimoLocal()
+  const tokenTurnoUrl = obtenerTokenTurnoDesdeUrl()
   const turnoActivo = obtenerTurnoActivo()
   const [tokenRecuperado, setTokenRecuperado] = useState(null)
 
   useEffect(() => {
-    if (turnoActivo?.tokenPublico) return
+    if (!tokenTurnoUrl) return
+    guardarTurnoActivo(tokenTurnoUrl)
+  }, [tokenTurnoUrl])
+
+  useEffect(() => {
+    if (turnoActivo?.tokenPublico || tokenTurnoUrl) return
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
 
     const recuperarTurno = async () => {
@@ -28,9 +35,9 @@ function PortalCliente() {
     }
 
     recuperarTurno()
-  }, [turnoActivo?.tokenPublico])
+  }, [turnoActivo?.tokenPublico, tokenTurnoUrl])
 
-  const tokenPublico = turnoActivo?.tokenPublico || tokenRecuperado
+  const tokenPublico = tokenTurnoUrl || turnoActivo?.tokenPublico || tokenRecuperado
   if (tokenPublico) {
     return <Navigate to={`/turno/${tokenPublico}`} replace />
   }
