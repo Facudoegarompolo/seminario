@@ -36,6 +36,13 @@ public class Turno {
     @Column(nullable = false)
     private EstadoTurno estado;
 
+    @Builder.Default
+    @Column(name = "prioridad", nullable = false)
+    private Boolean prioridad = false;
+
+    @Column(name = "fecha_solicitud_prioridad")
+    private LocalDateTime fechaSolicitudPrioridad;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -113,6 +120,9 @@ public class Turno {
         }
         if (franjaHoraria == null) {
             franjaHoraria = createdAt.getHour();
+        }
+        if (prioridad == null) {
+            prioridad = false;
         }
     }
 }

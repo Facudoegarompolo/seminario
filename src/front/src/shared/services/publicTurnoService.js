@@ -11,6 +11,14 @@ const publicTurnoService = {
     return response.data
   },
 
+  solicitarPrioridad: async (tokenPublico) => {
+    const response = await api.post(
+      `/public/turnos/${tokenPublico}/prioridad`
+    )
+
+    return response.data
+  },
+
   getPushPublicKey: async () => {
     const response = await api.get('/public/push/public-key')
     return response.data.publicKey

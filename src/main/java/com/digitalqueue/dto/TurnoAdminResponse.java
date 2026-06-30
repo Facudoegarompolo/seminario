@@ -28,4 +28,7 @@ public class TurnoAdminResponse {
     private LocalDateTime createdAt;
     private LocalDateTime calledAt;
     private LocalDateTime completedAt;
+    private Boolean prioridad;
+    private LocalDateTime fechaSolicitudPrioridad;
+
 }

@@ -124,6 +124,25 @@ public class TurnoService {
         return mapToTurnoEstadoResponse(turno);
     }
 
+    @Transactional
+    public TurnoEstadoResponse solicitarPrioridad(String tokenPublico) {
+        Turno turno = turnoRepository.findByTokenPublico(tokenPublico)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
+
+        if (turno.getEstado() != EstadoTurno.ESPERANDO &&
+                turno.getEstado() != EstadoTurno.PROXIMO) {
+            throw new OperacionInvalidaException(
+                    "Solo se puede solicitar prioridad para turnos que siguen en la fila");
+        }
+
+        turno.setPrioridad(true);
+        turno.setFechaSolicitudPrioridad(LocalDateTime.now());
+
+        Turno turnoGuardado = turnoRepository.save(turno);
+
+        return mapToTurnoEstadoResponse(turnoGuardado);
+    }
+
     public List<TurnoAdminResponse> obtenerTurnosDeFila(Long filaId) {
         return turnoRepository.findByFilaIdOrderByCreatedAtAsc(filaId)
                 .stream()
@@ -180,13 +199,19 @@ public class TurnoService {
         Turno turno = turnoRepository.findById(turnoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
 
-        if (!ESTADOS_EN_ATENCION.contains(turno.getEstado())) {
-            throw new OperacionInvalidaException("Solo se puede finalizar un turno llamado");
+        boolean estaEnAtencion = ESTADOS_EN_ATENCION.contains(turno.getEstado());
+
+        boolean esPrioritarioEnEspera = Boolean.TRUE.equals(turno.getPrioridad())
+                && ESTADOS_EN_ESPERA.contains(turno.getEstado());
+
+        if (!estaEnAtencion && !esPrioritarioEnEspera) {
+            throw new OperacionInvalidaException(
+                    "Solo se puede finalizar un turno llamado o un turno con prioridad");
         }
 
         turno.setEstado(EstadoTurno.FINALIZADO);
         turno.setCompletedAt(LocalDateTime.now());
-        if (esConsumoEnLocal(turno.getFila().getLocal())) {
+        if (estaEnAtencion && esConsumoEnLocal(turno.getFila().getLocal())) {
             restarPersonasActuales(turno.getFila().getLocal(), turno.getCantidadIntegrantes());
         }
 
@@ -213,7 +238,10 @@ public class TurnoService {
         turno.setCompletedAt(LocalDateTime.now());
 
         Turno turnoGuardado = turnoRepository.save(turno);
-        pushNotificationService.registrarNotificacionPendiente(turnoGuardado, TipoNotificacion.NO_PRESENTADO);
+
+        pushNotificationService.registrarNotificacionPendiente(
+                turnoGuardado,
+                TipoNotificacion.NO_PRESENTADO);
 
         return mapToTurnoEstadoResponse(turnoGuardado);
     }
@@ -237,6 +265,7 @@ public class TurnoService {
         turno.setCompletedAt(LocalDateTime.now());
 
         Turno turnoGuardado = turnoRepository.save(turno);
+
         pushNotificationService.registrarNotificacionPendiente(turnoGuardado, TipoNotificacion.TURNO_CANCELADO);
 
         return mapToTurnoEstadoResponse(turnoGuardado);
@@ -308,7 +337,9 @@ public class TurnoService {
                 turno.getErrorPrediccionMinutos(),
                 turno.getCreatedAt(),
                 turno.getCalledAt(),
-                turno.getCompletedAt());
+                turno.getCompletedAt(),
+                turno.getPrioridad(),
+                turno.getFechaSolicitudPrioridad());
     }
 
     private int obtenerCantidadIntegrantes(CrearTurnoRequest request) {

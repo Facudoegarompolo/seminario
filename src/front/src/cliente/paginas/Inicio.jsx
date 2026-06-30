@@ -80,35 +80,37 @@ function Inicio() {
 
       <section className="seccion-info">
         <TarjetaInfo
-          titulo="Gente En Fila"
+          titulo="Personas en la fila"
           valor={loading ? '...' : String(fila?.personasEsperando ?? 0)}
         />
 
         <TarjetaInfo
-          titulo="Tiempo De Espera Estimado"
+          titulo="Tiempo de espera estimado"
           valor={loading ? '...' : `${fila?.tiempoEstimadoMinutos ?? 0} min`}
         />
       </section>
 
       <section className="seccion-formulario">
+        <h2 className="titulo-input-cliente">
+          Ingresá tu nombre
+        </h2>
         <div className="contenedor-input">
           <input
             type="text"
             value={nombreCliente}
             onChange={(event) => setNombreCliente(event.target.value)}
-            placeholder="NOMBRE"
+            placeholder="Nombre"
           />
 
           <button type="button" onClick={() => setNombreCliente('')}>×</button>
         </div>
 
-        <p>Ingrese su nombre para anotarse en la fila</p>
 
         {error && <p className="cliente-error">{error}</p>}
 
-        <div onClick={handleSubmit}>
+        <div className="contenedor-boton-anotarse" onClick={handleSubmit}>
           <BotonPrincipal>
-            {submitting ? 'Anotando...' : 'Anotarme a la fila'}
+            {submitting ? 'Anotando...' : 'Anotarme en la fila'}
           </BotonPrincipal>
         </div>
       </section>

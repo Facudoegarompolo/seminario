@@ -109,7 +109,7 @@ body {
 }
 
 .seccion-formulario {
-    margin-top: 82px;
+    margin-top: 45px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -123,6 +123,7 @@ body {
     display: flex;
     align-items: center;
     padding: 0 12px;
+    margin-bottom: 18px;
 }
 
 .contenedor-input input {
@@ -481,6 +482,7 @@ body,
     font-size: 14px;
 }
 
+
 .boton-activar-avisos {
     flex: 0 0 auto;
     margin-left: 12px;
@@ -728,4 +730,239 @@ body,
     margin-top: 8px;
     background: #e5e7eb;
     color: #374151;
+}
+
+.contenedor-boton-anotarse button {
+    min-height: 52px;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 0 24px;
+}
+
+.contenedor-boton-anotarse {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.contenedor-boton-anotarse button {
+    width: 280px;
+    min-height: 52px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.titulo-input-cliente {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+.pantalla-turno-llamado {
+    width: 100%;
+    margin-top: 72px;
+    padding: 0 32px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.icono-turno-llamado {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #006241;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    font-weight: 800;
+    margin-bottom: 22px;
+}
+
+.turno-llamado-saludo {
+    font-size: 20px;
+    font-weight: 700;
+    color: #555;
+    margin: 0 0 10px;
+}
+
+.pantalla-turno-llamado h1 {
+    font-size: 30px;
+    font-weight: 800;
+    color: #333;
+    margin: 0 0 14px;
+}
+
+.turno-llamado-mensaje {
+    max-width: 300px;
+    font-size: 16px;
+    line-height: 1.45;
+    color: #444;
+    margin: 0;
+}
+
+.turno-llamado-numero {
+    margin-top: 22px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #006241;
+}
+
+.pantalla-turno-final {
+    width: 100%;
+    margin-top: 72px;
+    padding: 0 32px;
+    text-align: center;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.tarjeta-estado-final {
+    width: 100%;
+    max-width: 340px;
+    padding: 28px 24px 26px;
+    border-radius: 24px;
+    background: #f7f7f7;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.icono-turno-final {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 22px;
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.icono-turno-no-presentado {
+    background: #4b5563;
+    color: white;
+}
+
+.icono-turno-cancelado {
+    background: #444;
+    color: white;
+}
+
+.turno-llamado-saludo {
+    margin: 0 0 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #555;
+}
+
+.estado-final-label {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.pantalla-turno-final h1 {
+    margin: 0 0 14px;
+    font-size: 25px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: #2f2f2f;
+}
+
+.mensaje-cancelado {
+    max-width: 260px;
+    margin: 0;
+    color: #222;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.turno-llamado-numero {
+    margin-top: 20px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #006241;
+}
+
+.boton-volver-fila {
+    margin-top: 26px;
+    width: 280px;
+    min-height: 50px;
+    border: none;
+    border-radius: 12px;
+    background: #006241;
+    color: white;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.icono-turno-finalizado {
+    background: #006241;
+    color: white;
+}
+
+.icono-turno-no-presentado {
+    background: #4b5563;
+    color: white;
+}
+
+.mensaje-finalizado {
+    color: #222;
+    font-weight: 600;
+}
+
+.mensaje-no-presentado {
+    color: #222;
+    font-weight: 600;
+}
+
+.prioridad-cliente {
+    margin-top: 24px;
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+.link-prioridad {
+    border: none;
+    background: transparent;
+    color: #006241;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.prioridad-feedback {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #f2f8f5;
+    color: #222;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.icono-turno-prioridad {
+    background: #006241;
+    color: white;
+}
+
+.mensaje-prioridad {
+    color: #222;
+    font-weight: 600;
 }

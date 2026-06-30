@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { Clock3, Timer } from 'lucide-react'
 import logoElAntojo from '../assets/starbucks.svg'
 import BarraProgreso from '../componentes/BarraProgreso'
 import TarjetaEstado from '../componentes/TarjetaEstado'
@@ -7,6 +8,7 @@ import publicTurnoService from '../../shared/services/publicTurnoService'
 import { guardarUltimoLocal } from '../utils/ultimoLocal'
 import { guardarTurnoActivo, limpiarTurnoActivo } from '../utils/sesionTurno'
 import { fijarUrlInstalacionTurno, prepararManifestTurno } from '../utils/manifestTurno'
+
 const calcularProgreso = (estado, personasAdelante) => {
   if (estado === 'LLAMADO' || personasAdelante === 0) return 100
   if (personasAdelante <= 2) return 75
@@ -16,26 +18,26 @@ const calcularProgreso = (estado, personasAdelante) => {
 
 const CONFIG_ESTADO = {
   ESPERANDO: {
-    icono: '🔔',
+    icono: <Clock3 size={32} strokeWidth={2.4} />,
     titulo: 'Tu turno se acerca',
-    mensaje: 'Faltan varias personas antes que vos.'
+    mensaje: 'Hay otras personas antes que vos.'
   },
 
   PROXIMO: {
-    icono: '🔔',
+    icono: <Timer size={32} strokeWidth={2.4} />,
     titulo: '¡Estás próximo!',
-    mensaje: 'Falta muy poco para tu turno.'
+    mensaje: 'Estate atento: falta poco para que te llamen.'
   },
 
   LLAMADO: {
     icono: '🔔',
     titulo: '¡Es tu turno!',
-    mensaje: 'Presentate en el mostrador para ser atendido.'
+    mensaje: 'Acercate al mostrador para que podamos atenderte.'
   },
 
   FINALIZADO: {
     icono: '✅',
-    titulo: 'Gracias por su tiempo',
+    titulo: 'Gracias por tu tiempo',
     mensaje: 'Tu atención fue completada con éxito.'
   },
 
@@ -57,6 +59,7 @@ const CONFIG_ESTADO = {
     mensaje: 'Este turno ya no se encuentra activo.'
   }
 }
+
 const urlBase64ToUint8Array = (base64String) => {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
 
@@ -94,6 +97,7 @@ function Estado() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [notificacionesActivas, setNotificacionesActivas] = useState(false)
+  const [prioridadSolicitada, setPrioridadSolicitada] = useState(false)
   const [requiereInstalacion] = useState(
     () => esDispositivoIOS() && !esAplicacionInstalada(),
   )
@@ -116,12 +120,14 @@ function Estado() {
       try {
         const registration = await navigator.serviceWorker.getRegistration()
         const subscription = await registration?.pushManager.getSubscription()
+
         if (!subscription) {
           if (efectoActivo) setNotificacionesActivas(false)
           return
         }
 
         await publicTurnoService.registrarPushSubscription(tokenPublico, subscription)
+
         if (efectoActivo) setNotificacionesActivas(true)
       } catch {
         if (efectoActivo) setNotificacionesActivas(false)
@@ -129,6 +135,7 @@ function Estado() {
     }
 
     sincronizarSuscripcion()
+
     return () => {
       efectoActivo = false
     }
@@ -142,12 +149,18 @@ function Estado() {
       try {
         const data = await publicTurnoService.getEstado(tokenPublico)
         setTurno(data)
+
+        if (data?.prioridad) {
+          setPrioridadSolicitada(true)
+        }
+
         guardarUltimoLocal(data.codigoPublico, data.nombreLocal)
         guardarTurnoActivo(tokenPublico, data)
       } catch (err) {
         if (err.response?.status === 404) {
           limpiarTurnoActivo(tokenPublico)
         }
+
         setError('No se pudo cargar tu turno.')
       } finally {
         setLoading(false)
@@ -155,9 +168,12 @@ function Estado() {
     }
 
     fetchTurno()
+
     const interval = window.setInterval(fetchTurno, 15000)
+
     return () => window.clearInterval(interval)
   }, [tokenPublico])
+
   const calcularHoraEstimada = () => {
     const minutos = turno?.tiempoEstimadoMinutos ?? 0
 
@@ -169,6 +185,7 @@ function Estado() {
       minute: '2-digit'
     })
   }
+
   const activarNotificaciones = async () => {
     try {
       const esIOS = esDispositivoIOS()
@@ -211,8 +228,7 @@ function Estado() {
       await navigator.serviceWorker.register('/service-worker.js')
       const registration = await navigator.serviceWorker.ready
 
-      const publicKey =
-        await publicTurnoService.getPushPublicKey()
+      const publicKey = await publicTurnoService.getPushPublicKey()
 
       if (!publicKey) {
         throw new Error('El servidor no tiene configurada la clave publica VAPID.')
@@ -248,7 +264,7 @@ function Estado() {
 
       setNotificacionesActivas(true)
 
-      alert('Notificaciones activadas.')
+      alert('Notificaciones activadas. Te avisaremos cuando falte poco para tu turno.')
     } catch (error) {
       console.error('ERROR PUSH:', error)
 
@@ -265,10 +281,12 @@ function Estado() {
     try {
       const registration = await navigator.serviceWorker.getRegistration()
       const subscription = await registration?.pushManager.getSubscription()
+
       if (subscription) {
         await publicTurnoService.desactivarPushSubscription(tokenPublico, subscription)
         await subscription.unsubscribe()
       }
+
       setNotificacionesActivas(false)
     } catch {
       alert('No se pudieron desactivar las notificaciones.')
@@ -283,24 +301,20 @@ function Estado() {
     }
   }
 
-  const personasAdelante = turno?.personasAdelante ?? 0
-  const estado = turno?.estado ?? 'ESPERANDO'
-  const estadoConfig =
-    CONFIG_ESTADO[estado] || CONFIG_ESTADO.ESPERANDO
+  const handleSolicitarPrioridad = async () => {
+    try {
+      const turnoActualizado = await publicTurnoService.solicitarPrioridad(tokenPublico)
 
-  const progreso = calcularProgreso(estado, personasAdelante)
-  const puedeCancelar = ['ESPERANDO', 'PROXIMO', 'LLAMADO'].includes(estado)
-  const turnoTerminado = [
-    'FINALIZADO',
-    'NO_PRESENTADO',
-    'CANCELADO',
-    'EXPIRADO',
-  ].includes(estado)
-  const nombreCliente =
-    turno?.nombreCliente
-      ? turno.nombreCliente.charAt(0).toUpperCase() +
-      turno.nombreCliente.slice(1)
-      : 'Cliente'
+      if (turnoActualizado) {
+        setTurno(turnoActualizado)
+      }
+
+      setPrioridadSolicitada(true)
+    } catch {
+      alert('No se pudo solicitar atención con prioridad.')
+    }
+  }
+
   const handleCancelarTurno = async () => {
     const confirmar = window.confirm(
       '¿Estás seguro de que querés salir de la fila?'
@@ -310,12 +324,20 @@ function Estado() {
 
     try {
       const turnoCancelado = await publicTurnoService.cancelar(tokenPublico)
-      setTurno(turnoCancelado)
-      limpiarTurnoActivo(tokenPublico)
-      guardarUltimoLocal(
-        turnoCancelado.codigoPublico,
-        turnoCancelado.nombreLocal,
-      )
+
+      if (turnoCancelado) {
+        setTurno(turnoCancelado)
+        limpiarTurnoActivo(tokenPublico)
+        guardarUltimoLocal(
+          turnoCancelado.codigoPublico,
+          turnoCancelado.nombreLocal,
+        )
+      } else {
+        setTurno((turnoActual) => ({
+          ...turnoActual,
+          estado: 'CANCELADO'
+        }))
+      }
     } catch {
       alert('No se pudo cancelar el turno.')
     }
@@ -326,8 +348,28 @@ function Estado() {
       navigate(`/fila/${turno.codigoPublico}`)
       return
     }
+
     navigate('/')
   }
+
+  const personasAdelante = turno?.personasAdelante ?? 0
+  const estado = turno?.estado ?? 'ESPERANDO'
+  const estadoConfig = CONFIG_ESTADO[estado] || CONFIG_ESTADO.ESPERANDO
+  const progreso = calcularProgreso(estado, personasAdelante)
+  const puedeCancelar = ['ESPERANDO', 'PROXIMO', 'LLAMADO'].includes(estado)
+  const puedeSolicitarPrioridad = ['ESPERANDO', 'PROXIMO'].includes(estado)
+  const turnoTerminado = [
+    'FINALIZADO',
+    'NO_PRESENTADO',
+    'CANCELADO',
+    'EXPIRADO',
+  ].includes(estado)
+
+  const nombreCliente =
+    turno?.nombreCliente
+      ? turno.nombreCliente.charAt(0).toUpperCase() +
+      turno.nombreCliente.slice(1)
+      : 'Cliente'
 
   if (!loading && error && !turno) {
     return (
@@ -344,6 +386,212 @@ function Estado() {
         >
           Ir al inicio
         </button>
+      </main>
+    )
+  }
+
+  if (estado === 'LLAMADO') {
+    return (
+      <main className="pantalla">
+        <section className="marca marca-estado">
+          <img
+            src={logoElAntojo}
+            alt="El Antojo"
+            className="logo-local"
+          />
+        </section>
+
+        <section className="pantalla-turno-llamado">
+          <div className="icono-turno-llamado">
+            ✓
+          </div>
+
+          <p className="turno-llamado-saludo">
+            {nombreCliente}
+          </p>
+
+          <h1>¡Es tu turno!</h1>
+
+          <p className="turno-llamado-mensaje">
+            Acercate al mostrador para que podamos atenderte.
+          </p>
+
+          <p className="turno-llamado-numero">
+            Turno #{turno?.numeroTurno ?? '-'}
+          </p>
+        </section>
+
+        <footer className="logo-dq">DQ</footer>
+      </main>
+    )
+  }
+
+  if (estado === 'CANCELADO') {
+    return (
+      <main className="pantalla">
+        <section className="marca marca-estado">
+          <img
+            src={logoElAntojo}
+            alt="El Antojo"
+            className="logo-local"
+          />
+        </section>
+
+        <section className="pantalla-turno-final">
+          <div className="tarjeta-estado-final">
+            <div className="icono-turno-final icono-turno-cancelado">
+              ×
+            </div>
+
+            <p className="turno-llamado-saludo">
+              {nombreCliente}
+            </p>
+
+            <h1>Saliste de la fila</h1>
+
+            <p className="turno-llamado-mensaje mensaje-cancelado">
+              Tu turno fue cancelado correctamente.
+            </p>
+
+            <p className="turno-llamado-numero">
+              Turno #{turno?.numeroTurno ?? '-'}
+            </p>
+
+            <button
+              className="boton-volver-fila"
+              type="button"
+              onClick={volverAlRestaurante}
+            >
+              Volver a anotarme
+            </button>
+          </div>
+        </section>
+
+        <footer className="logo-dq">DQ</footer>
+      </main>
+    )
+  }
+
+  if (estado === 'FINALIZADO') {
+    return (
+      <main className="pantalla">
+        <section className="marca marca-estado">
+          <img
+            src={logoElAntojo}
+            alt="El Antojo"
+            className="logo-local"
+          />
+        </section>
+
+        <section className="pantalla-turno-final">
+          <div className="icono-turno-final icono-turno-finalizado">
+            ✓
+          </div>
+
+          <p className="turno-llamado-saludo">
+            {nombreCliente}
+          </p>
+
+          <h1>Gracias por tu visita</h1>
+
+          <p className="turno-llamado-mensaje mensaje-finalizado">
+            Tu atención fue completada con éxito.
+          </p>
+
+          <p className="turno-llamado-numero">
+            Turno #{turno?.numeroTurno ?? '-'}
+          </p>
+
+          <button
+            className="boton-volver-fila"
+            type="button"
+            onClick={volverAlRestaurante}
+          >
+            Volver a Starbucks UADE
+          </button>
+        </section>
+
+        <footer className="logo-dq">DQ</footer>
+      </main>
+    )
+  }
+
+  if (estado === 'NO_PRESENTADO') {
+    return (
+      <main className="pantalla">
+        <section className="marca marca-estado">
+          <img
+            src={logoElAntojo}
+            alt="El Antojo"
+            className="logo-local"
+          />
+        </section>
+
+        <section className="pantalla-turno-final">
+          <div className="icono-turno-final icono-turno-no-presentado">
+            !
+          </div>
+
+          <p className="turno-llamado-saludo">
+            {nombreCliente}
+          </p>
+
+          <h1>No te presentaste</h1>
+
+          <p className="turno-llamado-mensaje mensaje-no-presentado">
+            Tu turno fue marcado como no presentado.
+          </p>
+
+          <p className="turno-llamado-numero">
+            Turno #{turno?.numeroTurno ?? '-'}
+          </p>
+
+          <button
+            className="boton-volver-fila"
+            type="button"
+            onClick={volverAlRestaurante}
+          >
+            Volver a anotarme
+          </button>
+        </section>
+
+        <footer className="logo-dq">DQ</footer>
+      </main>
+    )
+  }
+
+  if (prioridadSolicitada) {
+    return (
+      <main className="pantalla">
+        <section className="marca marca-estado">
+          <img
+            src={logoElAntojo}
+            alt="El Antojo"
+            className="logo-local"
+          />
+        </section>
+
+        <section className="pantalla-turno-final">
+          <div className="icono-turno-final icono-turno-prioridad">
+            !
+          </div>
+
+          <p className="turno-llamado-saludo">
+            {nombreCliente}
+          </p>
+
+          <h1>Solicitud recibida</h1>
+
+          <p className="turno-llamado-mensaje mensaje-prioridad">
+            Esperá un momento, el encargado del local se acercará para atenderte.
+          </p>
+
+          <p className="turno-llamado-numero">
+            Turno #{turno?.numeroTurno ?? '-'}
+          </p>
+        </section>
+
+        <footer className="logo-dq">DQ</footer>
       </main>
     )
   }
@@ -371,23 +619,21 @@ function Estado() {
           {estadoConfig.mensaje}
         </p>
       </section>
+
       <h2 className="cliente-saludo">
         ¡Hola, {nombreCliente}!
       </h2>
+
       <BarraProgreso porcentaje={loading ? 15 : progreso} />
 
       <section className="grilla-estado">
         <TarjetaEstado
           titulo="Hora estimada"
-          valor={
-            estado === 'LLAMADO'
-              ? 'Ahora'
-              : calcularHoraEstimada()
-          }
+          valor={calcularHoraEstimada()}
         />
 
         <TarjetaEstado
-          titulo="Tiempo De Espera"
+          titulo="Tiempo de espera"
           valor={`${turno?.tiempoEstimadoMinutos ?? 0} minutos`}
         />
 
@@ -397,42 +643,51 @@ function Estado() {
         />
 
         <TarjetaEstado
-          titulo="Puesto En Fila"
+          titulo="Puesto en fila"
           valor={loading ? '...' : String(personasAdelante)}
         />
       </section>
 
       {error && <p className="cliente-error">{error}</p>}
 
-      {!turnoTerminado && <section className="notificacion">
-        <div>
-          <h3>Notificación de turno</h3>
-          <p>
-            {personasAdelante <= 2
-              ? 'Ya casi es tu turno. Tenés pocas personas por delante.'
-              : 'Active si quiere que le avisemos su turno'}
-          </p>
-        </div>
-
-        {requiereInstalacion ? (
+      {puedeSolicitarPrioridad && (
+        <section className="prioridad-cliente">
           <button
+            className="link-prioridad"
             type="button"
-            className="boton-activar-avisos"
-            onClick={() => setMostrarGuiaInstalacion(true)}
+            onClick={handleSolicitarPrioridad}
           >
-            Activar avisos
+            Necesito atención con prioridad
           </button>
-        ) : (
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={notificacionesActivas}
-              onChange={cambiarNotificaciones}
-            />
-            <span></span>
-          </label>
-        )}
-      </section>}
+        </section>
+      )}
+
+      {!turnoTerminado && (
+        <section className="notificacion">
+          <div>
+            <h3>🔔 Notificación de turno</h3>
+          </div>
+
+          {requiereInstalacion ? (
+            <button
+              type="button"
+              className="boton-activar-avisos"
+              onClick={() => setMostrarGuiaInstalacion(true)}
+            >
+              Activar avisos
+            </button>
+          ) : (
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={notificacionesActivas}
+                onChange={cambiarNotificaciones}
+              />
+              <span></span>
+            </label>
+          )}
+        </section>
+      )}
 
       {puedeCancelar && (
         <button
@@ -484,7 +739,11 @@ function Estado() {
             </button>
 
             <span className="guia-instalacion-etiqueta">iPhone y iPad</span>
-            <h2 id="titulo-guia-instalacion">Recibí el aviso con Safari cerrado</h2>
+
+            <h2 id="titulo-guia-instalacion">
+              Recibí el aviso con Safari cerrado
+            </h2>
+
             <p className="guia-instalacion-intro">
               No necesitás App Store ni una cuenta. Agregá Digital Queue a tu
               pantalla de inicio una sola vez.
@@ -495,14 +754,17 @@ function Estado() {
                 <span>1</span>
                 <p>Tocá <strong>Compartir</strong> en la barra de Safari.</p>
               </li>
+
               <li>
                 <span>2</span>
                 <p>Elegí <strong>Agregar a inicio</strong> y confirmá.</p>
               </li>
+
               <li>
                 <span>3</span>
                 <p>Abrí <strong>Digital Queue</strong> desde el nuevo ícono.</p>
               </li>
+
               <li>
                 <span>4</span>
                 <p>Activá los avisos cuando vuelvas a ver tu turno.</p>
@@ -513,6 +775,7 @@ function Estado() {
               El ícono abrirá directamente este turno. Si la app abre el inicio,
               Digital Queue recuperará tu turno automáticamente.
             </p>
+
             <button
               type="button"
               className="guia-instalacion-listo"
