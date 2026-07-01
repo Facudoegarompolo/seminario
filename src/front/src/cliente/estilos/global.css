@@ -910,6 +910,11 @@ body,
     cursor: pointer;
 }
 
+.tarjeta-estado-final .boton-volver-fila,
+.pantalla-turno-final .boton-volver-fila {
+    margin-top: 54px;
+}
+
 .icono-turno-finalizado {
     background: #006241;
     color: white;
@@ -968,7 +973,7 @@ body,
 }
 
 .footer-dq {
-    margin-top: 64px;
+    margin-top: 56px;
     margin-bottom: 18px;
     display: flex;
     align-items: center;
@@ -983,4 +988,35 @@ body,
     width: 54px;
     height: auto;
     object-fit: contain;
+}
+
+.pantalla-turno-final .tarjeta-estado-final {
+    width: 100%;
+    max-width: 340px;
+    padding: 34px 28px 36px;
+    border-radius: 24px;
+}
+
+.tarjeta-estado-final .boton-volver-fila {
+    width: 100%;
+    max-width: 260px;
+    margin-top: 38px;
+}
+
+.pantalla-turno-final .tarjeta-estado-final {
+    width: 100%;
+    max-width: 380px;
+    padding: 38px 30px 42px;
+    border-radius: 26px;
+}
+
+.tarjeta-estado-final .turno-llamado-numero {
+    margin-top: 28px;
+    margin-bottom: 0;
+}
+
+.tarjeta-estado-final .boton-volver-fila {
+    width: 100%;
+    max-width: 300px;
+    margin-top: 42px;
 }
