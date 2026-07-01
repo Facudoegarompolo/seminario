@@ -23,6 +23,18 @@ const STATUS_MAP = {
 }
 
 const REFRESH_INTERVAL_MS = 5000
+const ordenarTurnosPorPrioridad = (turnos) => {
+  return [...turnos].sort((a, b) => {
+    if (a.prioridad && !b.prioridad) return -1
+    if (!a.prioridad && b.prioridad) return 1
+
+    if (a.prioridad && b.prioridad) {
+      return new Date(a.fechaSolicitudPrioridad) - new Date(b.fechaSolicitudPrioridad)
+    }
+
+    return new Date(a.createdAt) - new Date(b.createdAt)
+  })
+}
 
 function Fila() {
   const navigate = useNavigate()
@@ -81,14 +93,21 @@ function Fila() {
   }, [turnos])
 
   const filteredTurnos = useMemo(() => {
+    let turnosFiltrados = enrichedTurnos
+
     if (activeTab === 'WAITING') {
-      return enrichedTurnos.filter((turno) => ['ESPERANDO', 'PROXIMO'].includes(turno.estado))
-    }
-    if (activeTab === 'CALLED') {
-      return enrichedTurnos.filter((turno) => ['LLAMADO', 'ATENDIENDO'].includes(turno.estado))
+      turnosFiltrados = enrichedTurnos.filter((turno) =>
+        ['ESPERANDO', 'PROXIMO'].includes(turno.estado)
+      )
     }
 
-    return enrichedTurnos
+    if (activeTab === 'CALLED') {
+      turnosFiltrados = enrichedTurnos.filter((turno) =>
+        ['LLAMADO', 'ATENDIENDO'].includes(turno.estado)
+      )
+    }
+
+    return ordenarTurnosPorPrioridad(turnosFiltrados)
   }, [activeTab, enrichedTurnos])
 
   const handleCallNext = () => {
@@ -116,35 +135,43 @@ function Fila() {
         ) : filteredTurnos.length === 0 ? (
           <div className="fila-empty">No hay turnos en esta categoría</div>
         ) : (
-        filteredTurnos.map((turno) => (
-          <div key={turno.turnoId} className="fila-item">
-            <div className="fila-item-left">
-              <h3>{turno.nombreCliente || 'Cliente anónimo'} · #{turno.numeroTurno}</h3>
+          filteredTurnos.map((turno) => (
+            <div key={turno.turnoId} className="fila-item">
+              <div className="fila-item-left">
+                <div className="fila-item-title">
+                  <h3>{turno.nombreCliente || 'Cliente anónimo'} · #{turno.numeroTurno}</h3>
 
-              <div className="fila-item-meta">
-                <span className={`status-dot ${turno.statusColor}`} />
-                <span className="fila-status">
-                  {turno.estadoLabel}
-                </span>
+                  {turno.prioridad && (
+                    <span className="fila-prioridad-badge">
+                      PRIORIDAD
+                    </span>
+                  )}
+                </div>
 
-                <span className="fila-personas">
-                  • {turno.personas} personas
-                </span>
+                <div className="fila-item-meta">
+                  <span className={`status-dot ${turno.statusColor}`} />
+                  <span className="fila-status">
+                    {turno.estadoLabel}
+                  </span>
+
+                  <span className="fila-personas">
+                    • {turno.personas} personas
+                  </span>
+                </div>
+              </div>
+
+              <div className="fila-item-right">
+                {['ESPERANDO', 'PROXIMO'].includes(turno.estado) ? (
+                  <>
+                    <strong>{turno.tiempoEstimado}</strong>
+                    <span>aprox.</span>
+                  </>
+                ) : (
+                  <strong>—</strong>
+                )}
               </div>
             </div>
-
-            <div className="fila-item-right">
-              {['ESPERANDO', 'PROXIMO'].includes(turno.estado) ? (
-                <>
-                  <strong>{turno.tiempoEstimado}</strong>
-                  <span>aprox.</span>
-                </>
-              ) : (
-                <strong>—</strong>
-              )}
-            </div>
-          </div>
-        ))
+          ))
         )}
       </div>
 
