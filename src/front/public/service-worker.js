@@ -64,12 +64,13 @@ self.addEventListener('push', (event) => {
         self.registration.showNotification(data.title, {
             body: data.body,
             icon: '/icon-192.png',
-            badge: '/icon-192.png',
+            badge: '/badge-72.png',
 
             requireInteraction: true,
             vibrate: [300, 100, 300, 100, 300],
             tag: `turno-${data.turnoId}`,
             renotify: true,
+
             actions: [
                 {
                     action: 'ver-turno',
