@@ -421,7 +421,10 @@ function Estado() {
           </p>
         </section>
 
-        <footer className="logo-dq">DQ</footer>
+        <footer className="footer-dq">
+          <span>Powered by</span>
+          <img src="/icon-192.png" alt="Digital Queue" />
+        </footer>
       </main>
     )
   }
@@ -467,7 +470,10 @@ function Estado() {
           </div>
         </section>
 
-        <footer className="logo-dq">DQ</footer>
+        <footer className="footer-dq">
+          <span>Powered by</span>
+          <img src="/icon-192.png" alt="Digital Queue" />
+        </footer>
       </main>
     )
   }
@@ -511,7 +517,10 @@ function Estado() {
           </button>
         </section>
 
-        <footer className="logo-dq">DQ</footer>
+        <footer className="footer-dq">
+          <span>Powered by</span>
+          <img src="/icon-192.png" alt="Digital Queue" />
+        </footer>
       </main>
     )
   }
@@ -555,7 +564,10 @@ function Estado() {
           </button>
         </section>
 
-        <footer className="logo-dq">DQ</footer>
+        <footer className="footer-dq">
+          <span>Powered by</span>
+          <img src="/icon-192.png" alt="Digital Queue" />
+        </footer>
       </main>
     )
   }
@@ -591,7 +603,10 @@ function Estado() {
           </p>
         </section>
 
-        <footer className="logo-dq">DQ</footer>
+        <footer className="footer-dq">
+          <span>Powered by</span>
+          <img src="/icon-192.png" alt="Digital Queue" />
+        </footer>
       </main>
     )
   }
@@ -714,7 +729,6 @@ function Estado() {
         </section>
       )}
 
-      <footer className="logo-dq">DQ</footer>
 
       {mostrarGuiaInstalacion && (
         <div
@@ -786,6 +800,11 @@ function Estado() {
           </section>
         </div>
       )}
+
+      <footer className="footer-dq">
+        <span>Powered by</span>
+        <img src="/icon-192.png" alt="Digital Queue" />
+      </footer>
     </main>
   )
 }

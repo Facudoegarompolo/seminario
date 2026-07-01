@@ -115,7 +115,10 @@ function Inicio() {
         </div>
       </section>
 
-      <footer className="logo-dq">DQ</footer>
+      <footer className="footer-dq">
+        <span>Powered by</span>
+        <img src="/icon-192.png" alt="Digital Queue" />
+      </footer>
     </main>
   )
 }
