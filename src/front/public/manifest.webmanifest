@@ -1,7 +1,7 @@
 {
   "id": "/",
   "name": "Digital Queue",
-  "short_name": "Digital Queue",
+  "short_name": "DQ",
   "description": "Segui tu turno y recibi avisos cuando se acerque.",
   "lang": "es-AR",
   "scope": "/",

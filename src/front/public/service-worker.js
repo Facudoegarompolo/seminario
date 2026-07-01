@@ -19,7 +19,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(new Response(JSON.stringify({
         id: tokenPublico ? `/turno/${tokenPublico}` : '/',
         name: 'Digital Queue',
-        short_name: 'Digital Queue',
+        short_name: 'DQ',
         description: 'Segui tu turno y recibi avisos cuando se acerque.',
         lang: 'es-AR',
         scope: '/',
@@ -63,14 +63,13 @@ self.addEventListener('push', (event) => {
     event.waitUntil(
         self.registration.showNotification(data.title, {
             body: data.body,
-            icon: '/favicon.svg',
-            badge: '/favicon.svg',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
 
             requireInteraction: true,
             vibrate: [300, 100, 300, 100, 300],
             tag: `turno-${data.turnoId}`,
             renotify: true,
-
             actions: [
                 {
                     action: 'ver-turno',
