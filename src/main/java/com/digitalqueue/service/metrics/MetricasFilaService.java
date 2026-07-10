@@ -9,6 +9,7 @@ import com.digitalqueue.model.metrics.MetricaLlamadoFilaDia;
 import com.digitalqueue.repository.metrics.MetricaInscripcionFilaDiaRepository;
 import com.digitalqueue.repository.metrics.MetricaLlegadasFranjaRepository;
 import com.digitalqueue.repository.metrics.MetricaLlamadoFilaDiaRepository;
+import com.digitalqueue.util.BusinessTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,9 +34,10 @@ public class MetricasFilaService {
         }
 
         LocalDateTime createdAt = turno.getCreatedAt();
-        LocalDate fecha = createdAt.toLocalDate();
-        String diaSemana = obtenerDiaSemana(turno, createdAt);
-        Integer franjaHoraria = obtenerFranjaHoraria(turno, createdAt);
+        LocalDateTime createdAtLocal = BusinessTime.storageToBusiness(createdAt);
+        LocalDate fecha = createdAtLocal.toLocalDate();
+        String diaSemana = obtenerDiaSemana(turno, createdAtLocal);
+        Integer franjaHoraria = obtenerFranjaHoraria(turno, createdAtLocal);
 
         MetricaInscripcionFilaDiaId id = new MetricaInscripcionFilaDiaId(
                 turno.getFila().getId(),
@@ -74,10 +76,11 @@ public class MetricasFilaService {
         }
 
         LocalDateTime calledAt = turno.getCalledAt();
+        LocalDateTime calledAtLocal = BusinessTime.storageToBusiness(calledAt);
 
         llamadoRepository.save(MetricaLlamadoFilaDia.builder()
                 .filaId(turno.getFila().getId())
-                .fecha(calledAt.toLocalDate())
+                .fecha(calledAtLocal.toLocalDate())
                 .calledAt(calledAt)
                 .turnoId(turno.getId())
                 .tiempoRealEspera(valorEntero(turno.getTiempoRealEsperaMinutos(), 0))
@@ -123,7 +126,9 @@ public class MetricasFilaService {
             return 0L;
         }
 
-        int hora = franjaHoraria == null ? LocalDateTime.now().getHour() : franjaHoraria;
+        int hora = franjaHoraria == null
+                ? BusinessTime.storageToBusiness(BusinessTime.nowStorage()).getHour()
+                : franjaHoraria;
 
         return inscripcionRepository
                 .countByFilaIdAndDiaSemanaAndFranjaHorariaAndCreatedAtGreaterThanEqualAndCreatedAtBefore(

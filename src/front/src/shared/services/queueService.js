@@ -21,6 +21,13 @@ const queueService = {
     const response = await api.post(`/admin/turnos/${turnoId}/no-presentado`)
     return response.data
   },
+  quitarAtendidos: async () => {
+    const response = await api.post('/admin/fila/limpiar-atendidos')
+    return response.data
+  },
+  quitarDeFilaVirtual: async (turnoId) => {
+    await api.delete(`/admin/turnos/${turnoId}/fila-virtual`)
+  },
 }
 
 export default queueService

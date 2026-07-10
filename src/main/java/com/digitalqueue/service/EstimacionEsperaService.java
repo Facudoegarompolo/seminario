@@ -9,6 +9,7 @@ import com.digitalqueue.model.enums.TipoOperacionLocal;
 import com.digitalqueue.repository.FilaRepository;
 import com.digitalqueue.repository.LocalRepository;
 import com.digitalqueue.service.metrics.MetricasFilaService;
+import com.digitalqueue.util.BusinessTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,7 @@ public class EstimacionEsperaService {
 
     @Transactional
     public EstimacionEspera calcularEstimacion(Fila fila, Long personasAdelante, Integer cantidadIntegrantes) {
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = BusinessTime.nowStorage();
         if (esConsumoEnLocal(fila.getLocal())) {
             actualizarMomentoLleno(fila.getLocal(), ahora);
         }
@@ -183,12 +184,13 @@ public class EstimacionEsperaService {
 
     private double obtenerTasaLlegadaHistorica(Fila fila, LocalDateTime ahora) {
         LocalDateTime desde = ahora.minusDays(DIAS_HISTORICOS);
+        LocalDateTime ahoraLocal = BusinessTime.storageToBusiness(ahora);
         long cantidadHistorica = metricasFilaService.contarHistoricoPorDiaYFranja(
                 fila.getId(),
                 desde,
                 ahora.minusMinutes(VENTANA_MINUTOS),
-                ahora.getDayOfWeek(),
-                ahora.getHour()
+                ahoraLocal.getDayOfWeek(),
+                ahoraLocal.getHour()
         );
 
         if (cantidadHistorica == 0) {

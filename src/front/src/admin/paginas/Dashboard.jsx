@@ -54,8 +54,8 @@ function Dashboard() {
 
       <section className="dashboard-header-card">
         <div>
-          <span className="page-label">¡Hola, Admin!</span>
-          <h2>Resumen del día</h2>
+          <span className="page-label">Hola, Admin</span>
+          <h2>Resumen del dia</h2>
           <p>Hoy, {currentDate}</p>
         </div>
 
@@ -111,10 +111,6 @@ function Dashboard() {
 
         <Link to="/admin/fila" className="view-queue-button">
           Ver fila completa
-        </Link>
-
-        <Link to="/admin/demo-notificacion" className="demo-notification-link">
-          Demo de notificación móvil
         </Link>
       </section>
     </div>

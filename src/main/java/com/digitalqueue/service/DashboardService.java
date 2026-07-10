@@ -12,6 +12,7 @@ import com.digitalqueue.model.Turno;
 import com.digitalqueue.model.enums.EstadoTurno;
 import com.digitalqueue.repository.FilaRepository;
 import com.digitalqueue.repository.TurnoRepository;
+import com.digitalqueue.util.BusinessTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -46,7 +47,9 @@ public class DashboardService {
     );
 
     private static final DateTimeFormatter HORA_FORMATO =
-            DateTimeFormatter.ofPattern("h:mm a", Locale.forLanguageTag("es-AR"));
+            DateTimeFormatter.ofPattern("HH:mm", Locale.forLanguageTag("es-AR"));
+    private static final DateTimeFormatter FECHA_FORMATO =
+            DateTimeFormatter.ofPattern("EEE d MMM", Locale.forLanguageTag("es-AR"));
 
     private final FilaRepository filaRepository;
     private final TurnoRepository turnoRepository;
@@ -137,18 +140,20 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public List<ChartDataPointResponse> obtenerGraficoActividad(Long filaId) {
         Fila fila = obtenerFila(filaId);
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = BusinessTime.today();
 
         return CHART_HOURS.stream()
                 .map(hora -> {
-                    LocalDateTime inicio = hoy.atTime(hora, 0);
-                    LocalDateTime fin = inicio.plusHours(3);
+                    LocalDateTime inicioLocal = hoy.atTime(hora, 0);
+                    LocalDateTime finLocal = inicioLocal.plusHours(3);
+                    LocalDateTime inicio = BusinessTime.businessToStorage(inicioLocal);
+                    LocalDateTime fin = BusinessTime.businessToStorage(finLocal);
                     long cantidad = turnoRepository.countByFilaIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
                             fila.getId(),
                             inicio,
                             fin
                     );
-                    return new ChartDataPointResponse(inicio.format(HORA_FORMATO), cantidad);
+                    return new ChartDataPointResponse(inicioLocal.format(HORA_FORMATO), cantidad);
                 })
                 .toList();
     }
@@ -160,8 +165,11 @@ public class DashboardService {
     }
 
     private RangoDia rangoDiaActual() {
-        LocalDateTime inicio = LocalDate.now().atStartOfDay();
-        return new RangoDia(inicio, inicio.plusDays(1));
+        LocalDateTime inicioLocal = BusinessTime.today().atStartOfDay();
+        return new RangoDia(
+                BusinessTime.businessToStorage(inicioLocal),
+                BusinessTime.businessToStorage(inicioLocal.plusDays(1))
+        );
     }
 
     private long contarPorEstadoEnRango(Long filaId, EstadoTurno estado, RangoDia rango) {
@@ -177,12 +185,15 @@ public class DashboardService {
         LocalDateTime fechaEvento = turno.getCompletedAt() != null
                 ? turno.getCompletedAt()
                 : turno.getCalledAt();
+        LocalDateTime fechaEventoLocal = BusinessTime.storageToBusiness(fechaEvento);
 
         return new RecentEventResponse(
                 turno.getId().toString(),
                 turno.getNumeroTurno(),
                 etiquetaEstado(turno.getEstado()),
-                fechaEvento == null ? "" : fechaEvento.format(HORA_FORMATO)
+                fechaEventoLocal == null ? "" : fechaEventoLocal.format(HORA_FORMATO),
+                fechaEventoLocal == null ? "" : fechaEventoLocal.format(FECHA_FORMATO),
+                BusinessTime.storageToBusinessOffsetIso(fechaEvento)
         );
     }
 
@@ -190,10 +201,13 @@ public class DashboardService {
         LocalDateTime fechaEvento = turno.getCompletedAt() != null
                 ? turno.getCompletedAt()
                 : turno.getCalledAt();
+        LocalDateTime fechaEventoLocal = BusinessTime.storageToBusiness(fechaEvento);
 
         return new HistoryEventResponse(
                 turno.getId().toString(),
-                fechaEvento == null ? "" : fechaEvento.format(HORA_FORMATO),
+                fechaEventoLocal == null ? "" : fechaEventoLocal.format(HORA_FORMATO),
+                fechaEventoLocal == null ? "" : fechaEventoLocal.format(FECHA_FORMATO),
+                BusinessTime.storageToBusinessOffsetIso(fechaEvento),
                 textoHistorial(turno)
         );
     }

@@ -3,6 +3,7 @@ package com.digitalqueue.model;
 import com.digitalqueue.model.enums.EstadoTurno;
 import com.digitalqueue.model.enums.QueueStatus;
 import com.digitalqueue.model.enums.TipoCliente;
+import com.digitalqueue.util.BusinessTime;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -37,8 +38,12 @@ public class Turno {
     private EstadoTurno estado;
 
     @Builder.Default
-    @Column(name = "prioridad", nullable = false)
+    @Column(name = "prioridad", nullable = false, columnDefinition = "boolean default false")
     private Boolean prioridad = false;
+
+    @Builder.Default
+    @Column(name = "oculto_en_fila", nullable = false, columnDefinition = "boolean default false")
+    private Boolean ocultoEnFila = false;
 
     @Column(name = "fecha_solicitud_prioridad")
     private LocalDateTime fechaSolicitudPrioridad;
@@ -104,7 +109,7 @@ public class Turno {
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+            createdAt = BusinessTime.nowStorage();
         }
         if (cantidadIntegrantes == null) {
             cantidadIntegrantes = 1;
@@ -115,14 +120,18 @@ public class Turno {
         if (nombreCliente == null || nombreCliente.isBlank()) {
             nombreCliente = "Cliente anónimo";
         }
+        LocalDateTime createdAtLocal = BusinessTime.storageToBusiness(createdAt);
         if (diaSemana == null) {
-            diaSemana = createdAt.getDayOfWeek();
+            diaSemana = createdAtLocal.getDayOfWeek();
         }
         if (franjaHoraria == null) {
-            franjaHoraria = createdAt.getHour();
+            franjaHoraria = createdAtLocal.getHour();
         }
         if (prioridad == null) {
             prioridad = false;
+        }
+        if (ocultoEnFila == null) {
+            ocultoEnFila = false;
         }
     }
 }

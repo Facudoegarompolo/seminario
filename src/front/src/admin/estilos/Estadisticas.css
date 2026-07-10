@@ -159,14 +159,37 @@
   background: #ffffff;
 }
 
-.history-row span {
+.history-time {
+  display: grid;
+  gap: 2px;
+  min-width: 84px;
   color: #64748b;
   font-size: 14px;
+  font-style: normal;
+}
+
+.history-time span {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.history-time small {
+  color: #64748b;
+  font-size: 12px;
+  text-transform: capitalize;
 }
 
 .history-row p {
   margin: 0;
   color: #0f172a;
+}
+
+.history-empty {
+  margin: 0;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: #f8fafc;
+  color: #64748b;
 }
 
 @media (max-width: 960px) {
@@ -183,5 +206,9 @@
 
   .estadisticas-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .history-row {
+    align-items: flex-start;
   }
 }

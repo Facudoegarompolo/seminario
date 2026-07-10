@@ -44,6 +44,10 @@ function PortalCliente() {
 
   return (
     <main className="pantalla portal-cliente">
+      <Link className="portal-admin-link" to="/admin/login">
+        Acceso admin
+      </Link>
+
       <img
         src={logoDigitalQueue}
         alt="Digital Queue"

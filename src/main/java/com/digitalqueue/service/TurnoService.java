@@ -3,6 +3,7 @@ package com.digitalqueue.service;
 import com.digitalqueue.dto.CrearTurnoRequest;
 import com.digitalqueue.dto.CrearTurnoResponse;
 import com.digitalqueue.dto.EstimacionEspera;
+import com.digitalqueue.dto.LimpiarFilaResponse;
 import com.digitalqueue.dto.TurnoAdminResponse;
 import com.digitalqueue.dto.TurnoEstadoResponse;
 import com.digitalqueue.exception.OperacionInvalidaException;
@@ -21,6 +22,7 @@ import com.digitalqueue.repository.LocalRepository;
 import com.digitalqueue.repository.PuntoAccesoRepository;
 import com.digitalqueue.repository.TurnoRepository;
 import com.digitalqueue.service.metrics.MetricasFilaService;
+import com.digitalqueue.util.BusinessTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +49,11 @@ public class TurnoService {
     private static final List<EstadoTurno> ESTADOS_EN_ATENCION = List.of(
             EstadoTurno.LLAMADO,
             EstadoTurno.ATENDIENDO);
+    private static final List<EstadoTurno> ESTADOS_OCULTABLES_EN_FILA = List.of(
+            EstadoTurno.FINALIZADO,
+            EstadoTurno.NO_PRESENTADO,
+            EstadoTurno.CANCELADO,
+            EstadoTurno.EXPIRADO);
     private static final String NOMBRE_CLIENTE_ANONIMO = "Cliente anónimo";
 
     @Transactional
@@ -70,7 +77,7 @@ public class TurnoService {
         Integer proximoNumero = obtenerProximoNumeroTurno(fila.getId());
         EstadoTurno estadoInicial = EstadoTurno.ESPERANDO;
 
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = BusinessTime.nowStorage();
 
         Turno turno = Turno.builder()
                 .fila(fila)
@@ -136,7 +143,7 @@ public class TurnoService {
         }
 
         turno.setPrioridad(true);
-        turno.setFechaSolicitudPrioridad(LocalDateTime.now());
+        turno.setFechaSolicitudPrioridad(BusinessTime.nowStorage());
 
         Turno turnoGuardado = turnoRepository.save(turno);
 
@@ -144,10 +151,36 @@ public class TurnoService {
     }
 
     public List<TurnoAdminResponse> obtenerTurnosDeFila(Long filaId) {
-        return turnoRepository.findByFilaIdOrderByCreatedAtAsc(filaId)
+        return turnoRepository.findVisiblesByFilaIdOrderByCreatedAtAsc(filaId)
                 .stream()
                 .map(this::mapToTurnoAdminResponse)
                 .toList();
+    }
+
+    @Transactional
+    public LimpiarFilaResponse limpiarTurnosTerminadosDeFila(Long filaId) {
+        List<Turno> turnos = turnoRepository.findVisiblesByFilaIdAndEstadoInOrderByCreatedAtAsc(
+                filaId,
+                ESTADOS_OCULTABLES_EN_FILA);
+
+        turnos.forEach(turno -> turno.setOcultoEnFila(true));
+        turnoRepository.saveAll(turnos);
+
+        return new LimpiarFilaResponse(turnos.size());
+    }
+
+    @Transactional
+    public void ocultarTurnoEnFila(Long turnoId) {
+        Turno turno = turnoRepository.findById(turnoId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Turno no encontrado"));
+
+        if (!ESTADOS_OCULTABLES_EN_FILA.contains(turno.getEstado())) {
+            throw new OperacionInvalidaException(
+                    "Solo se pueden quitar de la fila turnos finalizados, cancelados, no presentados o expirados");
+        }
+
+        turno.setOcultoEnFila(true);
+        turnoRepository.save(turno);
     }
 
     @Transactional
@@ -160,7 +193,7 @@ public class TurnoService {
                 .findFirstByFilaIdAndEstadoInOrderByCreatedAtAsc(filaId, ESTADOS_EN_ESPERA)
                 .orElseThrow(() -> new OperacionInvalidaException("No hay turnos esperando"));
 
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = BusinessTime.nowStorage();
 
         turno.setEstado(EstadoTurno.LLAMADO);
         turno.setCalledAt(ahora);
@@ -210,7 +243,7 @@ public class TurnoService {
         }
 
         turno.setEstado(EstadoTurno.FINALIZADO);
-        turno.setCompletedAt(LocalDateTime.now());
+        turno.setCompletedAt(BusinessTime.nowStorage());
         if (estaEnAtencion && esConsumoEnLocal(turno.getFila().getLocal())) {
             restarPersonasActuales(turno.getFila().getLocal(), turno.getCantidadIntegrantes());
         }
@@ -235,7 +268,7 @@ public class TurnoService {
         }
 
         turno.setEstado(EstadoTurno.NO_PRESENTADO);
-        turno.setCompletedAt(LocalDateTime.now());
+        turno.setCompletedAt(BusinessTime.nowStorage());
 
         Turno turnoGuardado = turnoRepository.save(turno);
 
@@ -262,7 +295,7 @@ public class TurnoService {
         }
 
         turno.setEstado(EstadoTurno.CANCELADO);
-        turno.setCompletedAt(LocalDateTime.now());
+        turno.setCompletedAt(BusinessTime.nowStorage());
 
         Turno turnoGuardado = turnoRepository.save(turno);
 
@@ -339,7 +372,8 @@ public class TurnoService {
                 turno.getCalledAt(),
                 turno.getCompletedAt(),
                 turno.getPrioridad(),
-                turno.getFechaSolicitudPrioridad());
+                turno.getFechaSolicitudPrioridad(),
+                turno.getOcultoEnFila());
     }
 
     private int obtenerCantidadIntegrantes(CrearTurnoRequest request) {
@@ -384,7 +418,7 @@ public class TurnoService {
         int actuales = local.getPersonasActuales() == null ? 0 : local.getPersonasActuales();
         int integrantes = cantidad == null ? 1 : cantidad;
         local.setPersonasActuales(actuales + integrantes);
-        actualizarMomentoLleno(local, LocalDateTime.now());
+        actualizarMomentoLleno(local, BusinessTime.nowStorage());
         localRepository.save(local);
     }
 
@@ -392,7 +426,7 @@ public class TurnoService {
         int actuales = local.getPersonasActuales() == null ? 0 : local.getPersonasActuales();
         int integrantes = cantidad == null ? 1 : cantidad;
         local.setPersonasActuales(Math.max(0, actuales - integrantes));
-        actualizarMomentoLleno(local, LocalDateTime.now());
+        actualizarMomentoLleno(local, BusinessTime.nowStorage());
         localRepository.save(local);
     }
 

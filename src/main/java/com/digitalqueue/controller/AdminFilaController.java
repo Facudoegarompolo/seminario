@@ -1,5 +1,6 @@
 package com.digitalqueue.controller;
 
+import com.digitalqueue.dto.LimpiarFilaResponse;
 import com.digitalqueue.dto.TurnoAdminResponse;
 import com.digitalqueue.dto.TurnoEstadoResponse;
 import com.digitalqueue.service.TurnoService;
@@ -64,5 +65,28 @@ public class AdminFilaController {
         adminAccessService.validarTurno(turnoId);
         TurnoEstadoResponse response = turnoService.marcarNoPresentado(turnoId);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/fila/limpiar-atendidos")
+    public ResponseEntity<LimpiarFilaResponse> limpiarAtendidosDeFilaActual() {
+        Long filaId = adminAccessService.resolverFilaId(null);
+        return ResponseEntity.ok(turnoService.limpiarTurnosTerminadosDeFila(filaId));
+    }
+
+    @PostMapping("/filas/{filaId}/limpiar-atendidos")
+    public ResponseEntity<LimpiarFilaResponse> limpiarAtendidos(
+            @PathVariable Long filaId
+    ) {
+        Long filaIdAutorizada = adminAccessService.resolverFilaId(filaId);
+        return ResponseEntity.ok(turnoService.limpiarTurnosTerminadosDeFila(filaIdAutorizada));
+    }
+
+    @DeleteMapping("/turnos/{turnoId}/fila-virtual")
+    public ResponseEntity<Void> quitarTurnoDeFilaVirtual(
+            @PathVariable Long turnoId
+    ) {
+        adminAccessService.validarTurno(turnoId);
+        turnoService.ocultarTurnoEnFila(turnoId);
+        return ResponseEntity.noContent().build();
     }
 }

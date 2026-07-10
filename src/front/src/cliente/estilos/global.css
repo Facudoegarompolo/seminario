@@ -243,6 +243,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+}
+
+.notificacion>div {
+    min-width: 0;
 }
 
 .notificacion h3 {
@@ -255,6 +260,15 @@ body {
     margin-top: 4px;
     font-size: 11px;
     color: #777;
+}
+
+.notificacion .notificacion-aviso {
+    max-width: 235px;
+    margin-top: 7px;
+    color: #6b4e00 !important;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.35;
 }
 
 .switch {
@@ -628,7 +642,22 @@ body,
 .portal-cliente {
     align-items: center;
     justify-content: center;
+    position: relative;
     text-align: center;
+}
+
+.portal-admin-link {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #0f172a;
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
 }
 
 .portal-cliente-logo {

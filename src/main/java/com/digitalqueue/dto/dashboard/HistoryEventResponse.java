@@ -11,5 +11,7 @@ public class HistoryEventResponse {
 
     private String id;
     private String time;
+    private String date;
+    private String dateTime;
     private String text;
 }

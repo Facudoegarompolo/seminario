@@ -1,6 +1,7 @@
 package com.digitalqueue.service;
 
 import com.digitalqueue.dto.TurnoEstadoResponse;
+import com.digitalqueue.dto.LimpiarFilaResponse;
 import com.digitalqueue.model.Fila;
 import com.digitalqueue.model.Local;
 import com.digitalqueue.model.PuntoAcceso;
@@ -17,6 +18,7 @@ import com.digitalqueue.repository.TurnoRepository;
 import com.digitalqueue.service.metrics.MetricasFilaService;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -163,6 +166,35 @@ class TurnoServiceTest {
         );
     }
 
+    @Test
+    void limpiarTurnosTerminadosSoloLosOcultaDeLaFilaVirtual() {
+        Turno finalizado = turnoConEstado(EstadoTurno.FINALIZADO);
+        Turno noPresentado = turnoConEstado(EstadoTurno.NO_PRESENTADO);
+
+        when(turnoRepository.findVisiblesByFilaIdAndEstadoInOrderByCreatedAtAsc(eq(7L), any()))
+                .thenReturn(List.of(finalizado, noPresentado));
+
+        LimpiarFilaResponse response = service.limpiarTurnosTerminadosDeFila(7L);
+
+        assertEquals(2, response.getTurnosOcultados());
+        assertEquals(true, finalizado.getOcultoEnFila());
+        assertEquals(true, noPresentado.getOcultoEnFila());
+        verify(turnoRepository).saveAll(List.of(finalizado, noPresentado));
+    }
+
+    @Test
+    void noPermiteQuitarDeFilaVirtualTurnosActivos() {
+        Turno turno = turnoConEstado(EstadoTurno.ESPERANDO);
+        when(turnoRepository.findById(10L)).thenReturn(Optional.of(turno));
+
+        assertThrows(
+                com.digitalqueue.exception.OperacionInvalidaException.class,
+                () -> service.ocultarTurnoEnFila(10L)
+        );
+
+        verify(turnoRepository, never()).save(turno);
+    }
+
     private Turno turnoLlamado(TipoOperacionLocal tipoOperacion) {
         Local local = Local.builder()
                 .id(4L)
@@ -183,5 +215,12 @@ class TurnoServiceTest {
                 .nombreCliente("Ana")
                 .cantidadIntegrantes(1)
                 .build();
+    }
+
+    private Turno turnoConEstado(EstadoTurno estado) {
+        Turno turno = turnoLlamado(TipoOperacionLocal.ATENCION_RAPIDA);
+        turno.setEstado(estado);
+        turno.setOcultoEnFila(false);
+        return turno;
     }
 }

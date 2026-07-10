@@ -10,6 +10,7 @@ const TAB_OPTIONS = [
   { key: 'WAITING', label: 'En espera' },
   { key: 'ALL', label: 'Todos' },
   { key: 'CALLED', label: 'Llamados' },
+  { key: 'FINISHED', label: 'Atendidos' },
 ]
 
 const STATUS_MAP = {
@@ -20,9 +21,11 @@ const STATUS_MAP = {
   FINALIZADO: { label: 'Atendido', color: 'gray' },
   CANCELADO: { label: 'Cancelado', color: 'red' },
   NO_PRESENTADO: { label: 'No se presentó', color: 'red' },
+  EXPIRADO: { label: 'Expirado', color: 'red' },
 }
 
 const REFRESH_INTERVAL_MS = 5000
+const TERMINAL_STATES = ['FINALIZADO', 'NO_PRESENTADO', 'CANCELADO', 'EXPIRADO']
 const ordenarTurnosPorPrioridad = (turnos) => {
   return [...turnos].sort((a, b) => {
     if (a.prioridad && !b.prioridad) return -1
@@ -42,6 +45,9 @@ function Fila() {
   const [activeTab, setActiveTab] = useState('WAITING')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [successMessage, setSuccessMessage] = useState(null)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [turnoRemovingId, setTurnoRemovingId] = useState(null)
 
   const fetchTurnos = useCallback(async ({ showLoading = false } = {}) => {
     if (showLoading) {
@@ -107,11 +113,60 @@ function Fila() {
       )
     }
 
+    if (activeTab === 'FINISHED') {
+      turnosFiltrados = enrichedTurnos.filter((turno) =>
+        TERMINAL_STATES.includes(turno.estado)
+      )
+    }
+
     return ordenarTurnosPorPrioridad(turnosFiltrados)
   }, [activeTab, enrichedTurnos])
 
   const handleCallNext = () => {
     navigate('/admin/llamar')
+  }
+
+  const handleRemoveFinished = async () => {
+    const confirmed = window.confirm('Esto solo quita turnos atendidos de la fila virtual. Las estadisticas se conservan. Continuar?')
+    if (!confirmed) return
+
+    setActionLoading(true)
+    setError(null)
+    setSuccessMessage(null)
+
+    try {
+      const response = await queueService.quitarAtendidos()
+      await fetchTurnos()
+      const count = response?.turnosOcultados ?? 0
+      setSuccessMessage(
+        count === 0
+          ? 'No habia turnos atendidos para quitar.'
+          : `Se quitaron ${count} turnos atendidos de la fila virtual.`
+      )
+    } catch {
+      setError('No se pudieron quitar los turnos atendidos.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleRemoveTurno = async (turno) => {
+    const confirmed = window.confirm(`Quitar el turno #${turno.numeroTurno} de la fila virtual? Las estadisticas se conservan.`)
+    if (!confirmed) return
+
+    setTurnoRemovingId(turno.turnoId)
+    setError(null)
+    setSuccessMessage(null)
+
+    try {
+      await queueService.quitarDeFilaVirtual(turno.turnoId)
+      await fetchTurnos()
+      setSuccessMessage(`Turno #${turno.numeroTurno} quitado de la fila virtual.`)
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo quitar el turno de la fila virtual.')
+    } finally {
+      setTurnoRemovingId(null)
+    }
   }
 
   return (
@@ -123,11 +178,20 @@ function Fila() {
           <h2>Fila virtual</h2>
           <p>Lista completa de la fila con acciones disponibles.</p>
         </div>
+        <button
+          className="fila-secondary-button"
+          type="button"
+          onClick={handleRemoveFinished}
+          disabled={actionLoading}
+        >
+          {actionLoading ? 'Quitando...' : 'Quitar atendidos'}
+        </button>
       </header>
 
       <FilterTabs options={TAB_OPTIONS} activeKey={activeTab} onChange={setActiveTab} />
 
       {error && <div className="fila-error">{error}</div>}
+      {successMessage && <div className="fila-success">{successMessage}</div>}
 
       <div className="fila-list">
         {loading ? (
@@ -168,6 +232,17 @@ function Fila() {
                   </>
                 ) : (
                   <strong>—</strong>
+                )}
+
+                {TERMINAL_STATES.includes(turno.estado) && (
+                  <button
+                    className="fila-remove-button"
+                    type="button"
+                    onClick={() => handleRemoveTurno(turno)}
+                    disabled={turnoRemovingId === turno.turnoId}
+                  >
+                    {turnoRemovingId === turno.turnoId ? 'Quitando...' : 'Quitar de fila'}
+                  </button>
                 )}
               </div>
             </div>

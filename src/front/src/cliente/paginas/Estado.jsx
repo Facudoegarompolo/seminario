@@ -90,6 +90,9 @@ const esAplicacionInstalada = () =>
   window.navigator.standalone === true ||
   window.matchMedia('(display-mode: standalone)').matches
 
+const MENSAJE_NOTIFICACIONES_HTTPS =
+  'Para activar avisos reales en el celular, abri Digital Queue por HTTPS. En esta URL local podes seguir usando la fila, pero el navegador bloquea push por seguridad.'
+
 function Estado() {
   const { tokenPublico } = useParams()
   const navigate = useNavigate()
@@ -102,6 +105,7 @@ function Estado() {
     () => esDispositivoIOS() && !esAplicacionInstalada(),
   )
   const [mostrarGuiaInstalacion, setMostrarGuiaInstalacion] = useState(false)
+  const [avisoNotificaciones, setAvisoNotificaciones] = useState(null)
 
   useEffect(() => {
     if (!tokenPublico) return
@@ -192,7 +196,7 @@ function Estado() {
       const esPWA = esAplicacionInstalada()
 
       if (!window.isSecureContext) {
-        alert('Las notificaciones requieren abrir la web mediante HTTPS.')
+        setAvisoNotificaciones(MENSAJE_NOTIFICACIONES_HTTPS)
         return
       }
 
@@ -204,24 +208,24 @@ function Estado() {
       }
 
       if (!('Notification' in window)) {
-        alert('Este navegador no soporta notificaciones web.')
+        setAvisoNotificaciones('Este navegador no soporta notificaciones web.')
         return
       }
 
       if (!('serviceWorker' in navigator)) {
-        alert('Este navegador no soporta service workers.')
+        setAvisoNotificaciones('Este navegador no soporta service workers.')
         return
       }
 
       if (!('PushManager' in window)) {
-        alert('Este navegador no soporta notificaciones push.')
+        setAvisoNotificaciones('Este navegador no soporta notificaciones push.')
         return
       }
 
       const permiso = await window.Notification.requestPermission()
 
       if (permiso !== 'granted') {
-        alert('Debés permitir las notificaciones.')
+        setAvisoNotificaciones('Debes permitir las notificaciones para recibir avisos.')
         return
       }
 
@@ -263,16 +267,12 @@ function Estado() {
       )
 
       setNotificacionesActivas(true)
-
-      alert('Notificaciones activadas. Te avisaremos cuando falte poco para tu turno.')
+      setAvisoNotificaciones('Notificaciones activadas. Te avisaremos cuando falte poco para tu turno.')
     } catch (error) {
       console.error('ERROR PUSH:', error)
 
-      alert(
-        JSON.stringify({
-          name: error?.name,
-          message: error?.message,
-        })
+      setAvisoNotificaciones(
+        error?.message || 'No se pudieron activar las notificaciones.'
       )
     }
   }
@@ -288,8 +288,9 @@ function Estado() {
       }
 
       setNotificacionesActivas(false)
+      setAvisoNotificaciones(null)
     } catch {
-      alert('No se pudieron desactivar las notificaciones.')
+      setAvisoNotificaciones('No se pudieron desactivar las notificaciones.')
     }
   }
 
@@ -299,6 +300,10 @@ function Estado() {
     } else {
       desactivarNotificaciones()
     }
+  }
+
+  const mostrarRequisitoHttps = () => {
+    setAvisoNotificaciones(MENSAJE_NOTIFICACIONES_HTTPS)
   }
 
   const handleSolicitarPrioridad = async () => {
@@ -364,6 +369,8 @@ function Estado() {
     'CANCELADO',
     'EXPIRADO',
   ].includes(estado)
+  const contextoSeguro =
+    typeof window !== 'undefined' ? window.isSecureContext : false
 
   const nombreCliente =
     turno?.nombreCliente
@@ -681,6 +688,11 @@ function Estado() {
         <section className="notificacion">
           <div>
             <h3>🔔 Notificación de turno</h3>
+            {avisoNotificaciones && (
+              <p className="notificacion-aviso" role="status">
+                {avisoNotificaciones}
+              </p>
+            )}
           </div>
 
           {requiereInstalacion ? (
@@ -690,6 +702,14 @@ function Estado() {
               onClick={() => setMostrarGuiaInstalacion(true)}
             >
               Activar avisos
+            </button>
+          ) : !contextoSeguro ? (
+            <button
+              type="button"
+              className="boton-activar-avisos"
+              onClick={mostrarRequisitoHttps}
+            >
+              Ver requisito
             </button>
           ) : (
             <label className="switch">

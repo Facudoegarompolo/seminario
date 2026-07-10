@@ -13,4 +13,6 @@ public class RecentEventResponse {
     private Integer number;
     private String status;
     private String time;
+    private String date;
+    private String dateTime;
 }

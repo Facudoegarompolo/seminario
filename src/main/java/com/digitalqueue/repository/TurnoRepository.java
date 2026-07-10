@@ -20,6 +20,26 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
 
     List<Turno> findByFilaIdOrderByCreatedAtAsc(Long filaId);
 
+    @Query("""
+            SELECT t FROM Turno t
+            WHERE t.fila.id = :filaId
+              AND (t.ocultoEnFila = false OR t.ocultoEnFila IS NULL)
+            ORDER BY t.createdAt ASC
+            """)
+    List<Turno> findVisiblesByFilaIdOrderByCreatedAtAsc(@Param("filaId") Long filaId);
+
+    @Query("""
+            SELECT t FROM Turno t
+            WHERE t.fila.id = :filaId
+              AND t.estado IN :estados
+              AND (t.ocultoEnFila = false OR t.ocultoEnFila IS NULL)
+            ORDER BY t.createdAt ASC
+            """)
+    List<Turno> findVisiblesByFilaIdAndEstadoInOrderByCreatedAtAsc(
+            @Param("filaId") Long filaId,
+            @Param("estados") Collection<EstadoTurno> estados
+    );
+
     Optional<Turno> findTopByFilaIdOrderByNumeroTurnoDesc(Long filaId);
 
     Optional<Turno> findFirstByFilaIdAndEstadoInOrderByCreatedAtAsc(

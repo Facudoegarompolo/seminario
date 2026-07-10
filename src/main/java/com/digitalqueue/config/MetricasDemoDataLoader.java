@@ -6,6 +6,7 @@ import com.digitalqueue.model.enums.QueueStatus;
 import com.digitalqueue.model.enums.TipoCliente;
 import com.digitalqueue.repository.FilaRepository;
 import com.digitalqueue.service.metrics.MetricasFilaService;
+import com.digitalqueue.util.BusinessTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -33,7 +34,7 @@ public class MetricasDemoDataLoader implements CommandLineRunner {
 
         try {
             Fila fila = filas.getFirst();
-            LocalDateTime ahora = LocalDateTime.now().withSecond(0).withNano(0);
+            LocalDateTime ahora = BusinessTime.nowStorage().withSecond(0).withNano(0);
 
             if (contarInscripciones(fila.getId(), ahora.minusMinutes(15), ahora) == 0) {
                 insertarMetricasRecientes(fila, ahora);
@@ -90,8 +91,8 @@ public class MetricasDemoDataLoader implements CommandLineRunner {
                 .tiempoEstimadoInformadoMinutos(tiempoEstimado)
                 .tiempoEstimadoMinimoMinutos(tiempoMinimo)
                 .tiempoEstimadoMaximoMinutos(tiempoMaximo)
-                .diaSemana(createdAt.getDayOfWeek())
-                .franjaHoraria(createdAt.getHour())
+                .diaSemana(BusinessTime.storageToBusiness(createdAt).getDayOfWeek())
+                .franjaHoraria(BusinessTime.storageToBusiness(createdAt).getHour())
                 .build();
 
         metricasFilaService.registrarInscripcion(turno);
