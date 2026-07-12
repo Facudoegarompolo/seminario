@@ -127,7 +127,7 @@ function Fila() {
   }
 
   const handleRemoveFinished = async () => {
-    const confirmed = window.confirm('Esto solo quita turnos atendidos de la fila virtual. Las estadisticas se conservan. Continuar?')
+    const confirmed = window.confirm('¿Estas seguro que quieres quitar atendidos? Si dices que si, se eliminaran pero quedaran en las estadisticas')
     if (!confirmed) return
 
     setActionLoading(true)
