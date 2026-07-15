@@ -2,7 +2,10 @@ import api from './api'
 
 const publicTurnoService = {
   getEstado: async (tokenPublico) => {
-    const response = await api.get(`/public/turnos/${tokenPublico}`)
+    const response = await api.get(`/public/turnos/${tokenPublico}`, {
+      params: { _t: Date.now() },
+      headers: { 'Cache-Control': 'no-cache' },
+    })
     return response.data
   },
 

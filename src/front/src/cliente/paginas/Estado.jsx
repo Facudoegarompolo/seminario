@@ -93,6 +93,8 @@ const esAplicacionInstalada = () =>
 const MENSAJE_NOTIFICACIONES_HTTPS =
   'Para activar avisos reales en el celular, abri Digital Queue por HTTPS. En esta URL local podes seguir usando la fila, pero el navegador bloquea push por seguridad.'
 
+const REFRESH_INTERVAL_MS = 2000
+
 function Estado() {
   const { tokenPublico } = useParams()
   const navigate = useNavigate()
@@ -146,12 +148,26 @@ function Estado() {
   }, [tokenPublico])
 
   useEffect(() => {
-    const fetchTurno = async () => {
-      setLoading(true)
-      setError(null)
+    let efectoActivo = true
+    let consultaEnCurso = false
+
+    const fetchTurno = async ({ showLoading = false } = {}) => {
+      if (consultaEnCurso) return
+
+      consultaEnCurso = true
+
+      if (showLoading) {
+        setLoading(true)
+      }
+
+      if (efectoActivo) {
+        setError(null)
+      }
 
       try {
         const data = await publicTurnoService.getEstado(tokenPublico)
+        if (!efectoActivo) return
+
         setTurno(data)
 
         if (data?.prioridad) {
@@ -165,17 +181,26 @@ function Estado() {
           limpiarTurnoActivo(tokenPublico)
         }
 
-        setError('No se pudo cargar tu turno.')
+        if (efectoActivo) {
+          setError('No se pudo cargar tu turno.')
+        }
       } finally {
-        setLoading(false)
+        consultaEnCurso = false
+
+        if (efectoActivo && showLoading) {
+          setLoading(false)
+        }
       }
     }
 
-    fetchTurno()
+    fetchTurno({ showLoading: true })
 
-    const interval = window.setInterval(fetchTurno, 15000)
+    const interval = window.setInterval(fetchTurno, REFRESH_INTERVAL_MS)
 
-    return () => window.clearInterval(interval)
+    return () => {
+      efectoActivo = false
+      window.clearInterval(interval)
+    }
   }, [tokenPublico])
 
   const calcularHoraEstimada = () => {
