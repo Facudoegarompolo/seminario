@@ -28,6 +28,12 @@ public class EstimacionEsperaService {
     private static final int ERROR_ALERTA_MINUTOS = 5;
     private static final int ERROR_PICO_MINUTOS = 10;
     private static final int MINIMO_ESPERA_SIN_CUPO_MINUTOS = 1;
+    private static final double TIEMPO_BASE_DEFAULT_POR_PERSONA = 3.0;
+    private static final double TIEMPO_BASE_MINIMO_POR_PERSONA = 3.0;
+    private static final double TIEMPO_BASE_MAXIMO_POR_PERSONA = 4.0;
+    private static final double TIEMPO_RECIENTE_MAXIMO_POR_PERSONA = 6.0;
+    private static final double TIEMPO_ALERTA_MAXIMO_POR_PERSONA = 5.0;
+    private static final double TIEMPO_PICO_MAXIMO_POR_PERSONA = 6.0;
 
     private final FilaRepository filaRepository;
     private final LocalRepository localRepository;
@@ -58,7 +64,12 @@ public class EstimacionEsperaService {
         TipoDia tipoDia = fila.getTipoDia() == null ? TipoDia.NORMAL : fila.getTipoDia();
         long personasEnEspera = personasAdelante == null ? 0L : personasAdelante;
         double esperaPorCapacidad = esConsumoEnLocal(fila.getLocal())
-                ? calcularEsperaPorCapacidad(fila.getLocal(), cantidadIntegrantes, ahora, tiempoPorPersona)
+                ? calcularEsperaPorCapacidad(
+                        fila.getLocal(),
+                        cantidadIntegrantes,
+                        ahora,
+                        obtenerTiempoCapacidadMinutos(fila)
+                )
                 : 0.0;
         double estimado = (esperaPorCapacidad + personasEnEspera * tiempoPorPersona) * tipoDia.getMultiplicador();
 
@@ -204,7 +215,18 @@ public class EstimacionEsperaService {
 
     private double obtenerTiempoHistoricoPorPersona(Fila fila) {
         if (fila.getTiempoPromedioAtencionMinutos() == null || fila.getTiempoPromedioAtencionMinutos() <= 0) {
-            return 3.0;
+            return TIEMPO_BASE_DEFAULT_POR_PERSONA;
+        }
+        return limitar(
+                fila.getTiempoPromedioAtencionMinutos(),
+                TIEMPO_BASE_MINIMO_POR_PERSONA,
+                TIEMPO_BASE_MAXIMO_POR_PERSONA
+        );
+    }
+
+    private double obtenerTiempoCapacidadMinutos(Fila fila) {
+        if (fila.getTiempoPromedioAtencionMinutos() == null || fila.getTiempoPromedioAtencionMinutos() <= 0) {
+            return TIEMPO_BASE_DEFAULT_POR_PERSONA;
         }
         return fila.getTiempoPromedioAtencionMinutos();
     }
@@ -217,7 +239,11 @@ public class EstimacionEsperaService {
             return historico;
         }
 
-        return VENTANA_MINUTOS / (double) llamadosRecientes;
+        return limitar(
+                VENTANA_MINUTOS / (double) llamadosRecientes,
+                TIEMPO_BASE_MINIMO_POR_PERSONA,
+                TIEMPO_RECIENTE_MAXIMO_POR_PERSONA
+        );
     }
 
     private double obtenerErrorPromedioReciente(Fila fila, LocalDateTime ahora) {
@@ -229,16 +255,27 @@ public class EstimacionEsperaService {
     }
 
     private double ponderarTiempoPorEstado(QueueStatus queueStatus, double historico, double reciente) {
-        return switch (queueStatus) {
+        double tiempoPorPersona = switch (queueStatus) {
             case NORMAL -> historico;
             case ALERTA -> historico * 0.5 + reciente * 0.5;
             case PICO -> historico * 0.2 + reciente * 0.8;
             case RECUPERACION -> historico * 0.4 + reciente * 0.6;
             case SIN_ESPERA -> 0.0;
         };
+
+        return switch (queueStatus) {
+            case NORMAL -> limitar(tiempoPorPersona, TIEMPO_BASE_MINIMO_POR_PERSONA, TIEMPO_BASE_MAXIMO_POR_PERSONA);
+            case ALERTA, RECUPERACION -> limitar(tiempoPorPersona, TIEMPO_BASE_MINIMO_POR_PERSONA, TIEMPO_ALERTA_MAXIMO_POR_PERSONA);
+            case PICO -> limitar(tiempoPorPersona, TIEMPO_BASE_MINIMO_POR_PERSONA, TIEMPO_PICO_MAXIMO_POR_PERSONA);
+            case SIN_ESPERA -> 0.0;
+        };
     }
 
     private int redondearHaciaArriba(double valor) {
         return (int) Math.ceil(valor);
+    }
+
+    private double limitar(double valor, double minimo, double maximo) {
+        return Math.max(minimo, Math.min(maximo, valor));
     }
 }

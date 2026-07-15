@@ -60,6 +60,16 @@ class EstimacionEsperaServiceTest {
         assertEquals(0, estimacion.getTiempoEstimadoMinutos());
     }
 
+    @Test
+    void tiempoPromedioConfiguradoAltoSeAcotaComoBaseNormal() {
+        Fila fila = crearFila(TipoOperacionLocal.ATENCION_RAPIDA, 20, 20, null, 9);
+
+        EstimacionEspera estimacion = service.calcularEstimacion(fila, 1L, 1);
+
+        assertEquals(QueueStatus.NORMAL, estimacion.getQueueStatus());
+        assertEquals(4, estimacion.getTiempoEstimadoMinutos());
+    }
+
     private Fila crearFila(
             Integer capacidadMaxima,
             Integer personasActuales,

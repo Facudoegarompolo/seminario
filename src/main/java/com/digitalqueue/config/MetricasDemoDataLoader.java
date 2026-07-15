@@ -29,6 +29,8 @@ public class MetricasDemoDataLoader implements CommandLineRunner {
     private static final int PRIMERA_FRANJA_HORARIA = 8;
     private static final int ULTIMA_FRANJA_HORARIA = 23;
     private static final int VENTANA_RECIENTE_MINUTOS = 15;
+    private static final int TIEMPO_PROMEDIO_DEFAULT_MINUTOS = 3;
+    private static final int TIEMPO_PROMEDIO_MAXIMO_BASE_MINUTOS = 4;
 
     private static final long BASE_ID_INSCRIPCION_HISTORICA = -1_000_000_000L;
     private static final long BASE_ID_LLAMADO_HISTORICO = -2_000_000_000L;
@@ -59,8 +61,30 @@ public class MetricasDemoDataLoader implements CommandLineRunner {
         LocalDateTime ahora = BusinessTime.nowStorage().withSecond(0).withNano(0);
 
         for (Fila fila : filas) {
-            sembrarMetricasSiHaceFalta(fila, ahora);
+            sembrarMetricasSiHaceFalta(normalizarTiempoPromedio(fila), ahora);
         }
+    }
+
+    private Fila normalizarTiempoPromedio(Fila fila) {
+        Integer tiempoPromedio = fila.getTiempoPromedioAtencionMinutos();
+        if (tiempoPromedio != null
+                && tiempoPromedio > 0
+                && tiempoPromedio <= TIEMPO_PROMEDIO_MAXIMO_BASE_MINUTOS) {
+            return fila;
+        }
+
+        int tiempoNormalizado = tiempoPromedio == null || tiempoPromedio <= 0
+                ? TIEMPO_PROMEDIO_DEFAULT_MINUTOS
+                : TIEMPO_PROMEDIO_MAXIMO_BASE_MINUTOS;
+
+        fila.setTiempoPromedioAtencionMinutos(tiempoNormalizado);
+        Fila filaGuardada = filaRepository.save(fila);
+        log.info(
+                "Fila {} normalizada a {} min/persona como tiempo base de atencion",
+                filaGuardada.getId(),
+                tiempoNormalizado
+        );
+        return filaGuardada;
     }
 
     private void sembrarMetricasSiHaceFalta(Fila fila, LocalDateTime ahora) {
@@ -284,9 +308,9 @@ public class MetricasDemoDataLoader implements CommandLineRunner {
     private int tiempoPromedio(Fila fila) {
         Integer tiempoPromedio = fila.getTiempoPromedioAtencionMinutos();
         if (tiempoPromedio == null || tiempoPromedio <= 0) {
-            return 3;
+            return TIEMPO_PROMEDIO_DEFAULT_MINUTOS;
         }
-        return tiempoPromedio;
+        return Math.min(tiempoPromedio, TIEMPO_PROMEDIO_MAXIMO_BASE_MINUTOS);
     }
 
     private boolean esFinDeSemana(DayOfWeek diaSemana) {
